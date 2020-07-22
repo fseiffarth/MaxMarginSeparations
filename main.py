@@ -49,17 +49,18 @@ def max_margin_separation_graphs(scr_path, db_name):
 
 
 def main():
-    scr_path = "D:/EigeneDokumente/Forschung/Code/MaxMarginSeparations/Results/"
+    scr_path = "D:/EigeneDokumente/Forschung/Code/MaxMarginSeparations/ResultsPaper/"
+    #scr_path = "D:/EigeneDokumente/Forschung/Code/MaxMarginSeparations/ResultsNew/"
     db_points = "PointSeparation"
     db_graphs = "GraphSeparation"
     db_trees = "TreeSeparation"
     #max_margin_separation_graphs(scr_path, db_graphs)
-    # max_margin_separation_points(scr_path, db_points)
+    #max_margin_separation_points(scr_path, db_points)
     #max_margin_separation_trees(scr_path, db_trees)
     print("Experiments Finished")
     print("Start Evaluation")
-    # evaluation_points(scr_path, db_points)
-    # evaluation_graphs(scr_path, db_graphs)
+    evaluation_points(scr_path, db_points)
+    evaluation_graphs(scr_path, db_graphs)
     evaluation_trees(scr_path, db_trees)
 
 

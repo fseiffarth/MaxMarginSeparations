@@ -124,8 +124,8 @@ def evaluation_trees(src_path, db_name):
 
 
         for j, x in enumerate(train_sizes, 0):
-            query = 'SELECT Avg(MAX(NumberRed, NumberGreen)/100) FROM ECML2020greedy WHERE NodeNumber=' + str(
-                    tree_size) + ' NumTrainingRed+NumTrainingGreen =' + str(x)
+            query = 'SELECT Avg(MAX(NumberRed, NumberGreen)/NumNodes) FROM ECML2020greedy WHERE NumNodes=' + str(
+                    tree_size) + ' AND NumTrainingRed+NumTrainingGreen =' + str(x)
             val = dataset.get_from_query(query)[0][0]
             x_values.append(x)
             y_values.append(val)
