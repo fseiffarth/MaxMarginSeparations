@@ -49,8 +49,8 @@ def max_margin_separation_graphs(scr_path, db_name):
 
 
 def main():
-    scr_path = "~/MaxMarginSeparations/ResultsPaper/"
-    scr_path = "~/MaxMarginSeparations/ResultsNew/"
+    scr_path = "~/Code/MaxMarginSeparations/ResultsPaper/"
+    #scr_path = "~/Code/MaxMarginSeparations/ResultsNew/"
     db_points = "PointSeparation"
     db_graphs = "GraphSeparation"
     db_trees = "TreeSeparation"

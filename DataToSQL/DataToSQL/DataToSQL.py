@@ -1,8 +1,8 @@
-'''
+"""
 Created on 29.04.2019
 
 @author: florian
-'''
+"""
 import os
 import sqlite3
 import numpy as np
@@ -10,20 +10,20 @@ from DataToSQL.PlotData.PlotData import plot_3d_data_colorbar
 
 
 class DataToSQL(object):
-    '''
+    """
     object for saving and getting data in SQL files
-    '''
+    """
 
     def __init__(self, file_path="", db_name="database"):
-        '''
+        """
         Constructor
-        '''
+        """
 
         self.file_path = file_path
         self.db_name = db_name + ".sqlite"
         """Create db if it does not exist"""
         if not os.path.isfile(self.file_path + self.db_name):
-            con = sqlite3.connect(self.file_path + self.db_name + ".sqlite")
+            sqlite3.connect(self.file_path + self.db_name + ".sqlite")
 
     """Check if table exists otherwise create"""
 
@@ -81,10 +81,9 @@ class DataToSQL(object):
         if len(row_value_list) != len(column_names) - self.get_auto_increment_column_number(table_name):
             print("No row inserted. Value list and column number do not fit together!")
 
-
         else:
             values = "("
-            for x, i in enumerate(row_value_list, 0):
+            for _, i in enumerate(row_value_list, 0):
                 values += "?"
                 values += ","
             values = values[:-1]
@@ -158,33 +157,33 @@ class DataToSQL(object):
     def get_column_info(self, table_name):
         return self.get_from_query("PRAGMA table_info(" + table_name + ");")
 
-    def sql_to_numpy_2d(self, table_name, column_name_A, column_name_B, column_name_A_values, column_name_B_values,
+    def sql_to_numpy_2d(self, table_name, column_name_a, column_name_b, column_name_a_values, column_name_b_values,
                         column, function=None):
-        result = np.zeros((len(column_name_A_values), len(column_name_B_values)))
-        for i, A in enumerate(column_name_A_values, 0):
-            for j, B in enumerate(column_name_B_values, 0):
+        result = np.zeros((len(column_name_a_values), len(column_name_b_values)))
+        for i, A in enumerate(column_name_a_values, 0):
+            for j, B in enumerate(column_name_b_values, 0):
                 if function is None:
                     val = self.get_from_query("SELECT " + str(column) + " FROM " + str(table_name) + " WHERE " + str(
-                        column_name_A) + " = '" + str(A) + "'" + " AND " + str(column_name_B) + " = '" + str(B) + "'")
+                        column_name_a) + " = '" + str(A) + "'" + " AND " + str(column_name_b) + " = '" + str(B) + "'")
                 else:
                     val = self.get_from_query("SELECT " + str(column) + " FROM " + str(table_name) + " WHERE " + str(
-                        column_name_A) + " = '" + str(A) + "'" + " AND " + str(column_name_B) + " = '" + str(B) + "'")
+                        column_name_a) + " = '" + str(A) + "'" + " AND " + str(column_name_b) + " = '" + str(B) + "'")
                     if val:
                         val = self.get_from_query("SELECT " + function + "(" + str(column) + ")" + " FROM " + str(
-                            table_name) + " WHERE " + str(column_name_A) + " = '" + str(A) + "'" + " AND " + str(
-                            column_name_B) + " = '" + str(B) + "'")
+                            table_name) + " WHERE " + str(column_name_a) + " = '" + str(A) + "'" + " AND " + str(
+                            column_name_b) + " = '" + str(B) + "'")
                 if val:
                     result[i][j] = val[0][0]
 
         return result
 
-    def sql_plot_3d_colorbar(self, table_name, column_name_A, column_name_B, column_name_A_values, column_name_B_values,
-                             column, function=None, column_A_ticks="class", column_B_ticks="class", min_val=0,
+    def sql_plot_3d_colorbar(self, table_name, column_name_a, column_name_b, column_name_a_values, column_name_b_values,
+                             column, function=None, column_a_ticks="class", column_b_ticks="class", min_val=0,
                              max_val=100, heading="Test", x_label_name="xLabel", y_label_name="yLabel", colormap="Reds",
                              colorbar_label="", tikz_save=None, name="Test"):
-        data = self.sql_to_numpy_2d(table_name, column_name_A, column_name_B, column_name_A_values,
-                                    column_name_B_values, column, function)
-        plot_3d_data_colorbar(data, column_A_ticks, column_B_ticks, column_name_A_values, column_name_B_values, min_val,
+        data = self.sql_to_numpy_2d(table_name, column_name_a, column_name_b, column_name_a_values,
+                                    column_name_b_values, column, function)
+        plot_3d_data_colorbar(data, column_a_ticks, column_b_ticks, column_name_a_values, column_name_b_values, min_val,
                               max_val, heading, x_label_name, y_label_name, colormap, colorbar_label, tikz_save, name)
 
     def experiment_to_database(self, experiment_name, experiment_attributes, experiment_attributes_type,
@@ -197,7 +196,7 @@ class DataToSQL(object):
         :param experiment_values:
         """
         self.create_table(experiment_name, ["Id"] + experiment_attributes,
-                                   ['INTEGER PRIMARY KEY AUTOINCREMENT'] + experiment_attributes_type)
+                          ['INTEGER PRIMARY KEY AUTOINCREMENT'] + experiment_attributes_type)
 
         for i, values in enumerate(experiment_values, 0):
             self.add_row_to_table(experiment_name, values)

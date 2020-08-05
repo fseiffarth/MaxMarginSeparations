@@ -35,7 +35,7 @@ class graph_generation(object):
 
         """Methods for coloring of the graph"""
 
-        """randomly set points to red a do spreading across the neighbours, color all other nodes in green"""
+        """randomly set E to red a do spreading across the neighbours, color all other nodes in green"""
 
         def random_spread(self, input=[], seed=0):
             random.seed(seed)
@@ -130,7 +130,7 @@ class graph_generation(object):
 
             return red_nodes_set, green_nodes_set
 
-        """randomly set points to red and green and do spreading across the neighbours"""
+        """randomly set E to red and green and do spreading across the neighbours"""
 
         def double_random_spread(self, input=[], seed=0):
             random.seed(seed)
@@ -179,7 +179,7 @@ class graph_generation(object):
 
             return red_nodes, green_nodes
 
-        """randomly set points to red and do closure in the graph of this points, color all other nodes in green"""
+        """randomly set E to red and do closure in the graph of this E, color all other nodes in green"""
 
         def closure_init(self, input=[], seed=0):
             random.seed(seed)

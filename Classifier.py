@@ -5,41 +5,41 @@ Created on 06.09.2018
 '''
 from Algos import *
 
-def ConvexHullClassifier(classifier = "opt", plot = False, dimension = 3, number_of_points = 100, number_runs = 1, num_start1 = 3, num_start2 = 3, random = True, points = [], positive_points = [], negative_points = [], y=[]):
-        
+
+def convex_hull_classifier(classifier="opt", plotting=False, dimension=3, number_of_points=100, number_runs=1, training_size_a=3,
+                           training_size_b=3, random_training_set=True, E=[], A_elements=[], B_elements=[], E_labels=[]):
     classified_complete = 0
     unclassified_complete = 0
     for i in range(0, number_runs):
-        if random:
-            (Set, Hull1, Hull2) = random_point_set(number_of_points, dimension, num_start1, num_start2)
+        if random_training_set:
+            (E, set_a, set_b) = random_point_set(number_of_points, dimension, training_size_a, training_size_b)
         else:
-            (Set, Hull1, Hull2) = (points, positive_points, negative_points)
-        test = PointSet(Set, Hull1, Hull2)
-        #test.plot_3d()
+            (E, set_a, set_b) = (E, A_elements, B_elements)
+        classification_setup = ClassificationPointSet(E=E, A=set_a, B=set_b)
+        # classification_setup.plot_3d()
 
         separable = False
 
-        #set the chosen classifier
+        # set the chosen classifier
         if classifier == "opt":
-            (calls, classification, separable) = test.optimal_alg()
+            (calls, classification, separable) = classification_setup.optimal_alg()
         elif classifier == "opt_hull":
-            (calls, classification, separable) = test.optimal_hull_alg()
+            (calls, classification, separable) = classification_setup.optimal_hull_alg()
         elif classifier == "greedy":
-            (calls, classification, separable) = test.greedy_alg()
+            (calls, classification, separable) = classification_setup.greedy_alg()
         elif classifier == "greedy2":
-            (calls, classification, separable) = test.greedy_alg2()
+            (calls, classification, separable) = classification_setup.greedy_alg2()
         elif classifier == "greedy_fast":
-            (calls, classification, separable) = test.greedy_fast_alg()
+            (calls, classification, separable) = classification_setup.greedy_fast_alg()
 
+        color_list = color_list_testing(E_labels, A_elements, B_elements)
 
-        colorlist = color_list_testing(y, positive_points, negative_points)
-
-        
-        #Plot the classified points
-        if plot and separable:
+        # Plot the classified E
+        if plotting and separable:
             if dimension == 2:
-                test.plot_2d_classification(classifier + str(len(points)) + str(len(positive_points) + len(negative_points)), colorlist)
+                classification_setup.plot_2d_classification(
+                    classifier + str(len(E)) + str(len(A_elements) + len(B_elements)), color_list)
             else:
-                test.plot_3d_classification()
+                classification_setup.plot_3d_classification()
 
     return classification, separable

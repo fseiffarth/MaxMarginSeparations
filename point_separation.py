@@ -57,29 +57,26 @@ class PointSeparation(object):
             while counter < self.run_number * len(self.classifiers):
                 # Generate synthetic blob data
                 if self.dataset == "Synthetic":
-                    X, y = DataGenerator.generate_blobs(n_samples=data_size, centers=[self.centers[0], self.centers[1]],
+                    E, y = DataGenerator.generate_blobs(n_samples=data_size, centers=[self.centers[0], self.centers[1]],
                                                         cluster_std=1, shuffle=False,
                                                         random_state=seed_counter * counter, separable=True)
                     dimension = len(self.centers[0])
                 else:
-                    X, y = self.data_X, self.data_y
-                    dimension = len(X[0])
+                    E, y = self.data_X, self.data_y
+                    dimension = len(E[0])
                 seed_counter += 1
 
-                num_red = training_size
-                num_green = training_size
-
-                red_points, green_points, training_points, training_labels, test_points, test_labels = set_training_testing(
-                    X, y, num_red, num_green)
+                A_elements, B_elements, A_B_vectors, A_B_labels, test_points, test_labels = set_training_testing(
+                    E=E, E_labels=y, A_size=training_size, B_size=training_size)
 
                 separable = False
                 for classifier in self.classifiers:
                     if classifier != "svm":
-                        classification, separable = ConvexHullClassifier(classifier=classifier, plot=self.plotting,
-                                                                         dimension=dimension,
-                                                                         random=False, points=X,
-                                                                         positive_points=red_points,
-                                                                         negative_points=green_points, y=y)
+                        classification, separable = convex_hull_classifier(classifier=classifier, plotting=self.plotting,
+                                                                           dimension=dimension,
+                                                                           random_training_set=False, E=E, E_labels=y,
+                                                                           A_elements=A_elements,
+                                                                           B_elements=B_elements)
 
                         if separable:
                             if counter % 1 == 0:
@@ -93,11 +90,11 @@ class PointSeparation(object):
                     elif classifier == "svm" and (separable or len(self.classifiers) == 1):
                         counter += 1
                         clf = svm.SVC(kernel='linear', C=1000)
-                        clf.fit(training_points, training_labels)
-                        classification = clf.predict(X)
+                        clf.fit(A_B_vectors, A_B_labels)
+                        classification = clf.predict(E)
                         if self.plotting:
-                            plot(X, color_list_testing(y, red_points, green_points), dim=dimension,
-                                 name=classifier + str(len(X)) + str(len(red_points) + len(green_points)), model=clf)
+                            plot(E, color_list_testing(y, A_elements, B_elements), dim=dimension,
+                                 name=classifier + str(len(E)) + str(len(A_elements) + len(B_elements)), model=clf)
 
                     columns = ['Timestamp', 'Accuracy', 'DefaultVal', 'Coverage', 'Correct', 'Wrong', 'Unclassified',
                                'ACorrect', 'AFalse', 'AUnclassified', 'BCorrect', 'BFalse',
@@ -115,5 +112,5 @@ class PointSeparation(object):
                         self.database.experiment_to_database(
                             table_name, columns,
                             column_types,
-                            get_data_values(X, y, classification, red_points, green_points))
+                            get_data_values(E, y, classification, A_elements, B_elements))
 

@@ -20,121 +20,111 @@ from scipy.optimize import linprog
 import sqlite3
 import os
 from sklearn.datasets.base import load_diabetes, load_breast_cancer
-from sklearn.datasets.openml import fetch_openml, _download_data_arff, \
-    _convert_arff_data
+from sklearn.datasets.openml import fetch_openml
 from scipy.io import arff
 import tikzplotlib
 from PyGEL3D import gel
 
 
 ####Class for the point set in which separation is done
-class PointSet(object):
-    def __init__(self, Set, Hull1, Hull2, isManifoldTrue=False):
+class ClassificationPointSet(object):
+    def __init__(self, E, A, B, is_manifold_true=False):
         self.field_size = math.inf
-        self.N = len(Set)
-        self.dim = len(Set[0])
-        self.color = []
+        self.size_E = len(E)
+        self.dimension_E = len(E[0])
+        self.colors_E = []
 
-        # convex hulls
-        self.Set1 = Hull1  # convex hull 1
-        self.Set2 = Hull2  # convex hull 2
-        self.Set1_size = len(Hull1)
-        self.Set2_size = len(Hull2)
+        self.A = A
+        self.B = B
+        self.size_A = len(A)
+        self.size_B = len(B)
 
         # set colors
-        for i in range(self.N):
-            if i in self.Set1:
-                self.color.append("red")
-            elif i in self.Set2:
-                self.color.append("green")
+        for i in range(self.size_E):
+            if i in self.A:
+                self.colors_E.append("red")
+            elif i in self.B:
+                self.colors_E.append("green")
             else:
-                self.color.append("b")
+                self.colors_E.append("blue")
 
         # point distances
-        self.Set1Distances = {}
-        self.Set2Distances = {}
-        self.Set1HullDistances = {}
-        self.Set2HullDistances = {}
+        self.convex_A_distances = {}
+        self.convex_B_distances = {}
+        self.convex_A_hull_distances = {}
+        self.convex_B_hull_distances = {}
 
-        self.Point_List = Set
+        self.E = E
+        self.hull_C_A = ConvexHull(self.E[self.A], 1)
+        self.C_A, added = get_points_inside_convex_hull(self.E, self.hull_C_A, self.A, [x for x in range(self.size_E) if x not in self.A])
+        for x in added:
+            self.colors_E[x] = 'orange'
 
-        self.H_1 = self.Set1
-        PointsH_1 = np.ndarray(shape=(len(self.H_1), self.dim))
-        counter = 0
-        for i in self.H_1:
-            PointsH_1[counter] = self.get_point(i)
-            counter += 1
+        self.hull_C_B = ConvexHull(self.E[self.B], 1)
+        self.C_B, added = get_points_inside_convex_hull(self.E, self.hull_C_B, self.B, [x for x in range(self.size_E) if x not in self.B])
+        for x in added:
+            self.colors_E[x] = 'violet'
 
-        self.ConvexHull1 = ConvexHull(PointsH_1, 1)
-
-        self.H_2 = self.Set2
-        PointsH_2 = np.ndarray(shape=(len(self.H_2), self.dim))
-        counter = 0
-        for i in self.H_2:
-            PointsH_2[counter] = self.get_point(i)
-            counter += 1
-
-        self.ConvexHull2 = ConvexHull(PointsH_2, 1)
-
-        if isManifoldTrue:
+        if is_manifold_true:
             # manifolds from hull
             self.m1 = gel.Manifold()
-            for s in self.ConvexHull1.simplices:
-                self.m1.add_face(self.ConvexHull1.points[s])
+            for s in self.hull_C_A.simplices:
+                self.m1.add_face(self.hull_C_A.points[s])
 
             self.m1dist = gel.MeshDistance(self.m1)
             self.m2 = gel.Manifold()
-            for s in self.ConvexHull2.simplices:
-                self.m2.add_face(self.ConvexHull1.points[s])
+            for s in self.hull_C_B.simplices:
+                self.m2.add_face(self.hull_C_B.points[s])
 
             self.m2dist = gel.MeshDistance(self.m2)
 
+        # Set unlabeled elements
         self.F = []
-
-        for i in range(0, self.N):
-            if i not in self.H_1 and i not in self.H_2:
+        for i in range(0, self.size_E):
+            if i not in self.C_A and i not in self.C_B:
                 self.F.append(i)
 
-        self.set_set1_neighbors()
-        self.set_set2_neighbors()
+        # Pre-computation of monotone linkages
+        self.convex_a_neighbors()
+        self.convex_b_neighbors()
 
-    def plot_2d_classification(self, name="Test", colorlist = []):
+    def plot_2d_classification(self, name="Test", colorlist=[]):
 
         # initialize first half space
-        PointsH_1 = np.ndarray(shape=(len(self.H_1), self.dim))
+        PointsH_1 = np.ndarray(shape=(len(self.C_A), self.dimension_E))
         counter = 0
-        for i in self.H_1:
+        for i in self.C_A:
             PointsH_1[counter] = self.get_point(i)
             counter += 1
-        self.ConvexHull1 = ConvexHull(PointsH_1, 1)
+        self.C_A = ConvexHull(PointsH_1, 1)
 
         # Initialize second half space
-        PointsH_2 = np.ndarray(shape=(len(self.H_2), self.dim))
+        PointsH_2 = np.ndarray(shape=(len(self.C_B), self.dimension_E))
         counter = 0
-        for i in self.H_2:
+        for i in self.C_B:
             PointsH_2[counter] = self.get_point(i)
             counter += 1
-        self.ConvexHull2 = ConvexHull(PointsH_2, 1)
+        self.C_B = ConvexHull(PointsH_2, 1)
 
         # Draw convex hulls of disjoint convex sets
-        for simplex in self.ConvexHull1.simplices:
-            plt.plot(self.ConvexHull1.points[simplex, 0], self.ConvexHull1.points[simplex, 1], 'k-')
-        for simplex in self.ConvexHull2.simplices:
-            plt.plot(self.ConvexHull2.points[simplex, 0], self.ConvexHull2.points[simplex, 1], 'k-')
+        for simplex in self.C_A.simplices:
+            plt.plot(self.C_A.points[simplex, 0], self.C_A.points[simplex, 1], 'k-')
+        for simplex in self.C_B.simplices:
+            plt.plot(self.C_B.points[simplex, 0], self.C_B.points[simplex, 1], 'k-')
 
         x_val_dict = {}
         y_val_dict = {}
 
         if colorlist == []:
-            colorlist = self.color
+            colorlist = self.colors_E
 
         for i, x in enumerate(colorlist, 0):
             if x not in x_val_dict:
-                x_val_dict[x] = [self.Point_List[i][0]]
-                y_val_dict[x] = [self.Point_List[i][1]]
+                x_val_dict[x] = [self.E[i][0]]
+                y_val_dict[x] = [self.E[i][1]]
             else:
-                x_val_dict[x].append(self.Point_List[i][0])
-                y_val_dict[x].append(self.Point_List[i][1])
+                x_val_dict[x].append(self.E[i][0])
+                y_val_dict[x].append(self.E[i][1])
 
         for key, value in x_val_dict.items():
             plt.scatter(value, y_val_dict[key], c=key)
@@ -145,243 +135,193 @@ class PointSet(object):
     def plot_3d_classification(self):
 
         # initialize first half space
-        PointsH_1 = np.ndarray(shape=(len(self.H_1), self.dim))
+        PointsH_1 = np.ndarray(shape=(len(self.C_A), self.dimension_E))
         counter = 0
-        for i in self.H_1:
+        for i in self.C_A:
             PointsH_1[counter] = self.get_point(i)
             counter += 1
 
-        self.ConvexHull1 = ConvexHull(PointsH_1, 1)
+        self.C_A = ConvexHull(PointsH_1, 1)
 
         # Initialize second half space
-        PointsH_2 = np.ndarray(shape=(len(self.H_2), self.dim))
+        PointsH_2 = np.ndarray(shape=(len(self.C_B), self.dimension_E))
         counter = 0
-        for i in self.H_2:
+        for i in self.C_B:
             PointsH_2[counter] = self.get_point(i)
             counter += 1
 
-        self.ConvexHull2 = ConvexHull(PointsH_2, 1)
+        self.C_B = ConvexHull(PointsH_2, 1)
 
         # print(self.ConvexHull1.equations)
 
         ax = plt.axes(projection='3d')
 
-        for simplex in self.ConvexHull1.simplices:
-            ax.plot3D(self.ConvexHull1.points[simplex, 0], self.ConvexHull1.points[simplex, 1],
-                      self.ConvexHull1.points[simplex, 2], 'k-')
-        for simplex in self.ConvexHull2.simplices:
-            ax.plot3D(self.ConvexHull2.points[simplex, 0], self.ConvexHull2.points[simplex, 1],
-                      self.ConvexHull2.points[simplex, 2], 'k-')
+        for simplex in self.C_A.simplices:
+            ax.plot3D(self.C_A.points[simplex, 0], self.C_A.points[simplex, 1],
+                      self.C_A.points[simplex, 2], 'k-')
+        for simplex in self.C_B.simplices:
+            ax.plot3D(self.C_B.points[simplex, 0], self.C_B.points[simplex, 1],
+                      self.C_B.points[simplex, 2], 'k-')
 
-        X_coord = np.ones(self.N)
-        Y_coord = np.ones(self.N)
-        Z_coord = np.ones(self.N)
-        for i in range(self.N):
-            X_coord[i] = self.Point_List[i][0]
-            Y_coord[i] = self.Point_List[i][1]
-            Z_coord[i] = self.Point_List[i][2]
+        X_coord = np.ones(self.size_E)
+        Y_coord = np.ones(self.size_E)
+        Z_coord = np.ones(self.size_E)
+        for i in range(self.size_E):
+            X_coord[i] = self.E[i][0]
+            Y_coord[i] = self.E[i][1]
+            Z_coord[i] = self.E[i][2]
 
-        ax.scatter3D(X_coord, Y_coord, Z_coord, c=self.color)
+        ax.scatter3D(X_coord, Y_coord, Z_coord, c=self.colors_E)
         plt.show()
 
     def get_point(self, n):
-        return self.Point_List[n]
+        return self.E[n]
 
-    def set_set1_neighbors(self, is_manifold=False):
+    def convex_a_neighbors(self, is_manifold=False):
         for n in self.F:
             min_dist = sys.maxsize
-            for x in self.Set1:
+            for x in self.C_A:
                 point_dist = dist(self.get_point(n), self.get_point(x))
                 if point_dist < min_dist:
                     min_dist = point_dist
-            self.Set1Distances[n] = min_dist
+            self.convex_A_distances[n] = min_dist
 
             if is_manifold:
                 d = self.m1dist.signed_distance(self.get_point(n))
-                self.Set1HullDistances[n] = d * np.sign(d)
-        self.Set1Distances = OrderedDict(sorted(self.Set1Distances.items(), key=lambda x: x[1], reverse=True))
+                self.convex_A_hull_distances[n] = d * np.sign(d)
+        self.convex_A_distances = OrderedDict(sorted(self.convex_A_distances.items(), key=lambda x: x[1], reverse=True))
 
         if is_manifold:
-            self.Set1HullDistances = OrderedDict(
-                sorted(self.Set1HullDistances.items(), key=lambda x: x[1], reverse=True))
+            self.convex_A_hull_distances = OrderedDict(
+                sorted(self.convex_A_hull_distances.items(), key=lambda x: x[1], reverse=True))
 
-    def set_set2_neighbors(self, is_manifold=False):
+    def convex_b_neighbors(self, is_manifold=False):
         for n in self.F:
-            min_dist = self.field_size * self.field_size
-            for x in self.Set2:
+            min_dist = sys.maxsize
+            for x in self.C_B:
                 point_dist = dist(self.get_point(n), self.get_point(x))
-                if (point_dist < min_dist):
+                if point_dist < min_dist:
                     min_dist = point_dist
-            self.Set2Distances[n] = min_dist
+            self.convex_B_distances[n] = min_dist
 
             if is_manifold:
                 d = self.m2dist.signed_distance(self.get_point(n))
-                self.Set1HullDistances[n] = d * np.sign(d)
-        self.Set2Distances = OrderedDict(sorted(self.Set2Distances.items(), key=lambda x: x[1], reverse=True))
+                self.convex_A_hull_distances[n] = d * np.sign(d)
+        self.convex_B_distances = OrderedDict(sorted(self.convex_B_distances.items(), key=lambda x: x[1], reverse=True))
 
         if is_manifold:
-            self.Set2HullDistances = OrderedDict(sorted(self.Set2Distances.items(), key=lambda x: x[1], reverse=True))
+            self.convex_B_hull_distances = OrderedDict(
+                sorted(self.convex_B_distances.items(), key=lambda x: x[1], reverse=True))
 
     def decide_nearest(self):
-        len1 = len(self.Set1Distances)
-        len2 = len(self.Set2Distances)
+        len1 = len(self.convex_A_distances)
+        len2 = len(self.convex_B_distances)
 
         if len1 == 0:
             return 0
         elif len2 == 0:
             return 1
-        elif next(reversed(self.Set1Distances.values())) <= next(reversed(self.Set2Distances.values())):
+        elif next(reversed(self.convex_A_distances.values())) <= next(reversed(self.convex_B_distances.values())):
             return 1
         else:
             return 0
 
     def decide_nearest_hull(self):
-        len1 = len(self.Set1HullDistances)
-        len2 = len(self.Set2HullDistances)
+        len1 = len(self.convex_A_hull_distances)
+        len2 = len(self.convex_B_hull_distances)
 
         if len1 == 0:
             return 0
         elif len2 == 0:
             return 1
-        elif next(reversed(self.Set1HullDistances.values())) <= next(reversed(self.Set2HullDistances.values())):
+        elif next(reversed(self.convex_A_hull_distances.values())) <= next(
+                reversed(self.convex_B_hull_distances.values())):
             return 1
         else:
             return 0
 
     def decide_farthest(self):
-        len1 = len(self.Set1Distances)
-        len2 = len(self.Set2Distances)
+        len1 = len(self.convex_A_distances)
+        len2 = len(self.convex_B_distances)
 
         if len1 == 0:
             return 0
         elif len2 == 0:
             return 1
-        elif (next(iter(self.Set1Distances.values())) <= next(iter(self.Set2Distances.values()))):
+        elif (next(iter(self.convex_A_distances.values())) <= next(iter(self.convex_B_distances.values()))):
             return 1
         else:
             return 0
 
-    def add_set1_nearest(self):
-        items = list(self.Set1Distances.items())
-        nearest = items[0]
-        point = nearest[0]
-        self.H_1.append(point)
-        self.color[point] = "orange"
+    def add_C_A_nearest(self):
+        point = list(self.convex_A_distances.items())[0][0]
+        self.C_A.append(point)
+        self.colors_E[point] = "orange"
         self.F.remove(point)
-        del self.Set1Distances[point]
-        del self.Set2Distances[point]
+        del self.convex_A_distances[point]
+        del self.convex_B_distances[point]
 
-    def add_set2_nearest(self):
-        items = list(self.Set2Distances.items())
-        nearest = items[0]
-        point = nearest[0]
-        self.H_2.append(point)
-        self.color[point] = "violet"
+    def add_C_B_nearest(self):
+        point = list(self.convex_B_distances.items())[0][0]
+        self.C_B.append(point)
+        self.colors_E[point] = "violet"
         self.F.remove(point)
-        del self.Set2Distances[point]
-        del self.Set1Distances[point]
+        del self.convex_B_distances[point]
+        del self.convex_A_distances[point]
 
     # SeCos-Algorithm from paper applied to convex hulls in R^d
     def greedy_alg(self):
         end = False
         oracle_calls = 0
+
+        # take an arbitrary element out of F
         random.shuffle(self.F)
-
         # label vector of the elements (binary classification {-1, 1}
-        labels = -1 * np.ones(shape=(self.N, 1))
-        outside_1 = self.F + self.H_2
-        outside_2 = self.F + self.H_1
+        labels = -1 * np.ones(shape=(self.size_E, 1))
 
-        # Set labels of initial labelled data
-        for i in self.H_1:
+        # E labels of initial labelled data
+        for i in self.C_A:
             labels[i] = 1
-        for i in self.H_2:
+        for i in self.C_B:
             labels[i] = 0
 
-        # Set initial hulls
-        Hull1 = self.ConvexHull1
-        inside1, added = get_points_inside_convex_hull(self.Point_List, Hull1, self.H_1, self.F + self.H_2)
-        oracle_calls += 1
-
-        if not intersect(inside1, self.H_2):
-            for x in added:
-                labels[x] = 1
-                self.color[x] = "orange"
-            self.H_1 = inside1
-
-        # Set initial hulls
-        Hull2 = self.ConvexHull2
-        inside2, added = get_points_inside_convex_hull(self.Point_List, Hull2, self.H_2, self.F + self.H_1)
-        oracle_calls += 1
-
-        if not intersect(inside2, self.H_1):
-            for x in added:
-                labels[x] = 0
-                self.color[x] = "violet"
-            self.H_2 = inside2
-
-        if not intersect(inside1, inside2):
-            for x in self.H_1:
-                if x in self.F:
-                    self.F.remove(x)
-            for x in self.H_2:
-                if x in self.F:
-                    self.F.remove(x)
-
+        if not intersect(self.C_A, self.C_B):
             while len(self.F) > 0 and end == False:
                 # print(len(self.F))
                 next_point = self.F.pop()
-                Hull1 = self.ConvexHull1
-                Hull1.add_points([self.get_point(next_point)], 1)
-                inside1, added = get_points_inside_convex_hull(self.Point_List, Hull1, self.H_1, self.F + self.H_2,
+                new_hull_C_A = ConvexHull(self.E[self.C_A], 1)
+                new_hull_C_A.add_points([self.get_point(next_point)], 1)
+                new_C_A, added = get_points_inside_convex_hull(self.E, new_hull_C_A, self.C_A, self.F + self.C_B,
                                                                next_point)
                 oracle_calls += 1
 
-                if not intersect(inside1, self.H_2):
-                    self.ConvexHull1.add_points([self.get_point(next_point)], 1)
+                if not intersect(new_C_A, self.C_B):
+                    self.hull_C_A = new_hull_C_A
+                    self.C_A = new_C_A
+                    self.F = list(set(self.F) - set(added))
+
                     for x in added:
                         labels[x] = 1
-                        self.color[x] = "orange"
-                        if x in self.F:
-                            self.F.remove(x)
-                    self.H_1 = inside1
+                        self.colors_E[x] = "orange"
 
                 else:
-                    # initialize first half space
-                    PointsH_1 = np.ndarray(shape=(len(self.H_1), self.dim))
-                    counter = 0
-                    for i in self.H_1:
-                        PointsH_1[counter] = self.get_point(i)
-                        counter += 1
-
-                    self.ConvexHull1 = ConvexHull(PointsH_1, 1)
-
-                    Hull2 = self.ConvexHull2
-                    Hull2.add_points([self.get_point(next_point)], 1)
-                    inside2, added = get_points_inside_convex_hull(self.Point_List, Hull2, self.H_2, self.F + self.H_1,
+                    new_hull_C_B = ConvexHull(self.E[self.C_B], 1)
+                    new_hull_C_B.add_points([self.get_point(next_point)], 1)
+                    new_C_B, added = get_points_inside_convex_hull(self.E, new_hull_C_B, self.C_B, self.F + self.C_A,
                                                                    next_point)
                     oracle_calls += 1
 
-                    if not intersect(self.H_1, inside2):
-                        self.ConvexHull2.add_points([self.get_point(next_point)], 1)
+                    if not intersect(self.C_A, new_C_B):
+                        self.hull_C_B = new_hull_C_B
+                        self.C_B = new_C_B
+                        self.F = list(set(self.F) - set(added))
                         for x in added:
                             labels[x] = 0
-                            self.color[x] = "violet"
-                            if x in self.F:
-                                self.F.remove(x)
-                        self.H_2 = inside2
-                    else:
-                        # initialize second half space
-                        PointsH_2 = np.ndarray(shape=(len(self.H_2), self.dim))
-                        counter = 0
-                        for i in self.H_2:
-                            PointsH_2[counter] = self.get_point(i)
-                            counter += 1
-                        self.ConvexHull2 = ConvexHull(PointsH_2, 1)
+                            self.colors_E[x] = "violet"
         else:
-            return ([], [], False)
+            return [], [], False
 
-        return (oracle_calls, labels, True)
+        return oracle_calls, labels, True
 
     def greedy_fast_alg(self):
         end = False
@@ -389,71 +329,71 @@ class PointSet(object):
         random.shuffle(self.F)
 
         # label vector of the elements (binary classification {1, 0} -1 are unclassified
-        labels = -1 * np.ones(shape=(self.N, 1))
-        outside_1 = self.F + self.H_2
-        outside_2 = self.F + self.H_1
+        labels = -1 * np.ones(shape=(self.size_E, 1))
+        outside_1 = self.F + self.C_B
+        outside_2 = self.F + self.C_A
 
-        # Set labels of initial labelled data
-        for i in self.H_1:
+        # E labels of initial labelled data
+        for i in self.C_A:
             labels[i] = 1
-        for i in self.H_2:
+        for i in self.C_B:
             labels[i] = 0
 
-        # Set initial hulls
-        inside1, added, intersection = get_inside_points(self.Point_List, self.H_1, self.F, CheckSet=self.H_2)
+        # E initial hulls
+        inside1, added, intersection = get_inside_points(self.E, self.C_A, self.F, CheckSet=self.C_B)
         oracle_calls += 1
 
         if not intersection:
             for x in added:
                 labels[x] = 1
-                self.color[x] = "orange"
-            self.H_1 = inside1
+                self.colors_E[x] = "orange"
+            self.C_A = inside1
 
-        # Set initial hulls
-        inside2, added, intersection = get_inside_points(self.Point_List, self.H_2, self.F, CheckSet=self.H_1)
+        # E initial hulls
+        inside2, added, intersection = get_inside_points(self.E, self.C_B, self.F, CheckSet=self.C_A)
         oracle_calls += 1
 
         if not intersection:
             for x in added:
                 labels[x] = 0
-                self.color[x] = "violet"
-            self.H_2 = inside2
+                self.colors_E[x] = "violet"
+            self.C_B = inside2
 
         if not intersect(inside1, inside2):
-            for x in self.H_1:
+            for x in self.C_A:
                 if x in self.F:
                     self.F.remove(x)
-            for x in self.H_2:
+            for x in self.C_B:
                 if x in self.F:
                     self.F.remove(x)
 
             while len(self.F) > 0 and end == False:
-                #print(len(self.F))
+                # print(len(self.F))
                 next_point = self.F.pop()
-                inside1, added, intersection = get_inside_points(self.Point_List, self.H_1, self.F, next_point,
-                                                                 self.H_2)
+                inside1, added, intersection = get_inside_points(self.E, self.C_A, self.F, next_point,
+                                                                 self.C_B)
                 oracle_calls += 1
 
                 if not intersection:
                     for x in added:
                         labels[x] = 1
-                        self.color[x] = "orange"
+                        self.colors_E[x] = "orange"
                         if x in self.F:
                             self.F.remove(x)
-                    self.H_1 = inside1
+                    self.C_A = inside1
 
                 else:
-                    inside2, added, intersection = get_inside_points(self.Point_List, self.H_2, self.F, next_point,
-                                                                     self.H_1)
+                    inside2, added, intersection = get_inside_points(self.E, self.C_B, self.F, next_point,
+                                                                     self.C_A)
                     oracle_calls += 1
 
                     if not intersection:
                         for x in added:
                             labels[x] = 0
-                            self.color[x] = "violet"
+                            self.colors_E[x] = "violet"
                             if x in self.F:
                                 self.F.remove(x)
-                        self.H_2 = inside2
+                        self.C_B = inside2
         else:
             return ([], [], False)
 
@@ -465,149 +405,149 @@ class PointSet(object):
         random.shuffle(self.F)
 
         # label vector of the elements (binary classification {-1, 1}
-        labels = -1 * np.ones(shape=(self.N, 1))
-        outside_1 = self.F + self.H_2
-        outside_2 = self.F + self.H_1
+        labels = -1 * np.ones(shape=(self.size_E, 1))
+        outside_1 = self.F + self.C_B
+        outside_2 = self.F + self.C_A
 
-        # Set labels of initial labelled data
-        for i in self.H_1:
+        # E labels of initial labelled data
+        for i in self.C_A:
             labels[i] = 1
-        for i in self.H_2:
+        for i in self.C_B:
             labels[i] = 0
 
-        # Set initial hulls
-        Hull1 = self.ConvexHull1
-        inside1, added = get_points_inside_convex_hull(self.Point_List, Hull1, self.H_1, self.F + self.H_2)
+        # E initial hulls
+        Hull1 = self.C_A
+        inside1, added = get_points_inside_convex_hull(self.E, Hull1, self.C_A, self.F + self.C_B)
         oracle_calls += 1
 
-        if not intersect(inside1, self.H_2):
+        if not intersect(inside1, self.C_B):
             for x in added:
                 labels[x] = 1
-                self.color[x] = "orange"
-            self.H_1 = inside1
+                self.colors_E[x] = "orange"
+            self.C_A = inside1
 
-        # Set initial hulls
-        Hull2 = self.ConvexHull2
-        inside2, added = get_points_inside_convex_hull(self.Point_List, Hull2, self.H_2, self.F + self.H_1)
+        # E initial hulls
+        Hull2 = self.C_B
+        inside2, added = get_points_inside_convex_hull(self.E, Hull2, self.C_B, self.F + self.C_A)
         oracle_calls += 1
 
-        if not intersect(inside2, self.H_1):
+        if not intersect(inside2, self.C_A):
             for x in added:
                 labels[x] = 0
-                self.color[x] = "violet"
-            self.H_2 = inside2
+                self.colors_E[x] = "violet"
+            self.C_B = inside2
 
         if not intersect(inside1, inside2):
-            for x in self.H_1:
+            for x in self.C_A:
                 if x in self.F:
                     self.F.remove(x)
-            for x in self.H_2:
+            for x in self.C_B:
                 if x in self.F:
                     self.F.remove(x)
 
             while len(self.F) > 0 and end == False:
-                #print(len(self.F))
+                # print(len(self.F))
                 next_point = self.F.pop()
 
                 if (random.randint(0, 1)):
-                    Hull1 = self.ConvexHull1
+                    Hull1 = self.C_A
                     Hull1.add_points([self.get_point(next_point)], 1)
-                    inside1, added = get_points_inside_convex_hull(self.Point_List, Hull1, self.H_1, self.F + self.H_2,
+                    inside1, added = get_points_inside_convex_hull(self.E, Hull1, self.C_A, self.F + self.C_B,
                                                                    next_point)
                     oracle_calls += 1
 
-                    if not intersect(inside1, self.H_2):
-                        self.ConvexHull1.add_points([self.get_point(next_point)], 1)
+                    if not intersect(inside1, self.C_B):
+                        self.C_A.add_points([self.get_point(next_point)], 1)
                         for x in added:
                             labels[x] = 1
-                            self.color[x] = "orange"
+                            self.colors_E[x] = "orange"
                             if x in self.F:
                                 self.F.remove(x)
-                        self.H_1 = inside1
+                        self.C_A = inside1
 
                     else:
                         # initialize first half space
-                        PointsH_1 = np.ndarray(shape=(len(self.H_1), self.dim))
+                        PointsH_1 = np.ndarray(shape=(len(self.C_A), self.dimension_E))
                         counter = 0
-                        for i in self.H_1:
+                        for i in self.C_A:
                             PointsH_1[counter] = self.get_point(i)
                             counter += 1
 
-                        self.ConvexHull1 = ConvexHull(PointsH_1, 1)
+                        self.C_A = ConvexHull(PointsH_1, 1)
 
-                        Hull2 = self.ConvexHull2
+                        Hull2 = self.C_B
                         Hull2.add_points([self.get_point(next_point)], 1)
-                        inside2, added = get_points_inside_convex_hull(self.Point_List, Hull2, self.H_2,
-                                                                       self.F + self.H_1, next_point)
+                        inside2, added = get_points_inside_convex_hull(self.E, Hull2, self.C_B,
+                                                                       self.F + self.C_A, next_point)
                         oracle_calls += 1
 
-                        if not intersect(self.H_1, inside2):
-                            self.ConvexHull2.add_points([self.get_point(next_point)], 1)
+                        if not intersect(self.C_A, inside2):
+                            self.C_B.add_points([self.get_point(next_point)], 1)
                             for x in added:
                                 labels[x] = 0
-                                self.color[x] = "violet"
+                                self.colors_E[x] = "violet"
                                 if x in self.F:
                                     self.F.remove(x)
-                            self.H_2 = inside2
+                            self.C_B = inside2
                         else:
                             # initialize second half space
-                            PointsH_2 = np.ndarray(shape=(len(self.H_2), self.dim))
+                            PointsH_2 = np.ndarray(shape=(len(self.C_B), self.dimension_E))
                             counter = 0
-                            for i in self.H_2:
+                            for i in self.C_B:
                                 PointsH_2[counter] = self.get_point(i)
                                 counter += 1
 
-                            self.ConvexHull2 = ConvexHull(PointsH_2, 1)
+                            self.C_B = ConvexHull(PointsH_2, 1)
 
                 else:
-                    Hull2 = self.ConvexHull2
+                    Hull2 = self.C_B
                     Hull2.add_points([self.get_point(next_point)], 1)
-                    inside2, added = get_points_inside_convex_hull(self.Point_List, Hull2, self.H_2, self.F + self.H_1,
+                    inside2, added = get_points_inside_convex_hull(self.E, Hull2, self.C_B, self.F + self.C_A,
                                                                    next_point)
                     oracle_calls += 1
 
-                    if not intersect(inside2, self.H_1):
-                        self.ConvexHull2.add_points([self.get_point(next_point)], 1)
+                    if not intersect(inside2, self.C_A):
+                        self.C_B.add_points([self.get_point(next_point)], 1)
                         for x in added:
                             labels[x] = 0
-                            self.color[x] = "violet"
+                            self.colors_E[x] = "violet"
                             if x in self.F:
                                 self.F.remove(x)
-                        self.H_2 = inside2
+                        self.C_B = inside2
 
                     else:
                         # initialize first half space
-                        PointsH_2 = np.ndarray(shape=(len(self.H_2), self.dim))
+                        PointsH_2 = np.ndarray(shape=(len(self.C_B), self.dimension_E))
                         counter = 0
-                        for i in self.H_2:
+                        for i in self.C_B:
                             PointsH_2[counter] = self.get_point(i)
                             counter += 1
 
-                        self.ConvexHull2 = ConvexHull(PointsH_2, 1)
+                        self.C_B = ConvexHull(PointsH_2, 1)
 
-                        Hull1 = self.ConvexHull1
+                        Hull1 = self.C_A
                         Hull1.add_points([self.get_point(next_point)], 1)
-                        inside1, added = get_points_inside_convex_hull(self.Point_List, Hull1, self.H_1,
-                                                                       self.F + self.H_2, next_point)
+                        inside1, added = get_points_inside_convex_hull(self.E, Hull1, self.C_A,
+                                                                       self.F + self.C_B, next_point)
                         oracle_calls += 1
 
-                        if not intersect(self.H_2, inside1):
-                            self.ConvexHull1.add_points([self.get_point(next_point)], 1)
+                        if not intersect(self.C_B, inside1):
+                            self.C_A.add_points([self.get_point(next_point)], 1)
                             for x in added:
                                 labels[x] = 1
-                                self.color[x] = "orange"
+                                self.colors_E[x] = "orange"
                                 if x in self.F:
                                     self.F.remove(x)
-                            self.H_1 = inside1
+                            self.C_A = inside1
                         else:
                             # initialize second half space
-                            PointsH_1 = np.ndarray(shape=(len(self.H_1), self.dim))
+                            PointsH_1 = np.ndarray(shape=(len(self.C_A), self.dimension_E))
                             counter = 0
-                            for i in self.H_1:
+                            for i in self.C_A:
                                 PointsH_1[counter] = self.get_point(i)
                                 counter += 1
 
-                            self.ConvexHull1 = ConvexHull(PointsH_1, 1)
+                            self.C_A = ConvexHull(PointsH_1, 1)
         else:
             return ([], [], False)
 
@@ -617,110 +557,76 @@ class PointSet(object):
         time_point = time.time()
         oracle_calls = 0
         counter = 0
-        labels = -1 * np.ones(shape=(self.N, 1))
-        outside_points_1 = [x for x in self.Set1Distances.keys()] + self.H_2
-        outside_points_2 = [x for x in self.Set2Distances.keys()] + self.H_1
+        labels = -1 * np.ones(shape=(self.size_E, 1))
+        outside_points_1 = [x for x in self.convex_A_distances.keys()] + self.C_B
+        outside_points_2 = [x for x in self.convex_B_distances.keys()] + self.C_A
 
         # add labels
-        for i in self.H_1:
+        for i in self.C_A:
             labels[i] = 1
-        for i in self.H_2:
+        for i in self.C_B:
             labels[i] = 0
 
-        # check if hulls are intersecting
-        Hull1 = self.ConvexHull1
-        inside1, added = get_points_inside_convex_hull(self.Point_List, Hull1, self.H_1, outside_points_1)
-        self.H_1 = inside1
-        Hull2 = self.ConvexHull2
-        inside2, added = get_points_inside_convex_hull(self.Point_List, Hull2, self.H_2, outside_points_2)
-        self.H_2 = inside2
-
-        if not intersect(inside1, inside2):
-            while (len(self.Set1Distances) > 0 or len(self.Set2Distances) > 0):
-                #print(len(self.Set1Distances), len(self.Set2Distances))
+        if not intersect(self.C_A, self.C_B):
+            while (len(self.convex_A_distances) > 0 or len(self.convex_B_distances) > 0):
+                # print(len(self.Set1Distances), len(self.Set2Distances))
                 added = []
 
                 # First set is nearer to nearest not classified point
                 if self.decide_nearest():
-
                     time_point = time_step("Find Neighbour:", time_point)
-
-                    if len(self.Set1Distances) > 0:
-                        next_point = self.Set1Distances.popitem()[0]
-
-                        Hull1 = self.ConvexHull1
-                        Hull1.add_points([self.get_point(next_point)], 1)
-                        time_point = time_step("Adding Convex Hull points 1:", time_point)
-
-                        inside1, added = get_points_inside_convex_hull(self.Point_List, Hull1, self.H_1,
+                    if len(self.convex_A_distances) > 0:
+                        next_point = self.convex_A_distances.popitem()[0]
+                        new_hull_C_A = ConvexHull(self.E[self.C_A], 1)
+                        new_hull_C_A.add_points([self.get_point(next_point)], 1)
+                        time_point = time_step("Adding Convex Hull E 1:", time_point)
+                        new_C_A, added = get_points_inside_convex_hull(self.E, new_hull_C_A, self.C_A,
                                                                        outside_points_1)
                         oracle_calls += 1
-                        time_point = time_step("Getting inside points:", time_point)
+                        time_point = time_step("Getting inside E:", time_point)
 
                         # if there is no intersection the point can be added to the first convex set
-                        if not intersect(inside1, self.H_2):
+                        if not intersect(new_C_A, self.C_B):
                             time_point = time_step("Intersection Test:", time_point)
-                            self.ConvexHull1 = Hull1
-                            time_point = time_step("Adding Convex Hull points:", time_point)
-
+                            self.C_A = new_C_A
+                            self.hull_C_A = new_hull_C_A
                             for x in added:
                                 # add to labels
                                 labels[x] = 1
-                                self.color[x] = "orange"
-                                if x in self.Set1Distances.keys():
-                                    del self.Set1Distances[x]
-                                if x in self.Set2Distances.keys():
-                                    del self.Set2Distances[x]
-
-                                outside_points_1.remove(x)
-                            self.H_1 = inside1
-
+                                self.colors_E[x] = "orange"
+                                if x in self.convex_A_distances.keys():
+                                    del self.convex_A_distances[x]
+                                if x in self.convex_B_distances.keys():
+                                    del self.convex_B_distances[x]
+                            outside_points_1 = list(set(outside_points_1) - set(added))
                             time_point = time_step("Update arrays:", time_point)
 
 
                         # if there is an intersection we have to check if it can be added to the second set
                         else:
-                            time_point = time_step("Intersection Test:", time_point)
-                            # Renew first half space
-                            PointsH_1 = np.ndarray(shape=(len(self.H_1), self.dim))
-                            counter = 0
-                            for i in self.H_1:
-                                PointsH_1[counter] = self.get_point(i)
-                                counter += 1
-                            self.ConvexHull1 = ConvexHull(PointsH_1, 1)
-
                             # Test second half space
-                            Hull2 = self.ConvexHull2
-                            Hull2.add_points([self.get_point(next_point)], 1)
-                            inside2, added = get_points_inside_convex_hull(self.Point_List, Hull2, self.H_2,
+                            new_hull_C_B = ConvexHull(self.E[self.C_B], 1)
+                            new_hull_C_B.add_points([self.get_point(next_point)], 1)
+                            new_C_B, added = get_points_inside_convex_hull(self.E, new_hull_C_B, self.C_B,
                                                                            outside_points_2)
                             oracle_calls += 1
 
                             # the point can be added to the second set,
-                            # if we reach this point the first time all the other points which are classified did not change the optimal margin
-                            if not intersect(self.H_1, inside2):
-                                self.ConvexHull2 = Hull2
+                            # if we reach this point the first time all the other E which are classified did not change the optimal margin
+                            if not intersect(self.C_A, new_C_B):
+                                self.C_B = new_C_B
+                                self.hull_C_B = new_hull_C_B
                                 for x in added:
                                     # add to labels
                                     labels[x] = 0
-                                    self.color[x] = "violet"
-                                    if x in self.Set1Distances.keys():
-                                        del self.Set1Distances[x]
-                                    if x in self.Set2Distances.keys():
-                                        del self.Set2Distances[x]
-                                    outside_points_2.remove(x)
-                                self.H_2 = inside2
-
-
+                                    self.colors_E[x] = "violet"
+                                    if x in self.convex_A_distances.keys():
+                                        del self.convex_A_distances[x]
+                                    if x in self.convex_B_distances.keys():
+                                        del self.convex_B_distances[x]
+                                outside_points_2 = list(set(outside_points_2) - set(added))
                             # the point cannot be added to any set
                             else:
-                                # Renew second half space
-                                PointsH_2 = np.ndarray(shape=(len(self.H_2), self.dim))
-                                counter = 0
-                                for i in self.H_2:
-                                    PointsH_2[counter] = self.get_point(i)
-                                    counter += 1
-                                self.ConvexHull2 = ConvexHull(PointsH_2, 1)
                                 if next_point in outside_points_1:
                                     outside_points_1.remove(next_point)
                                 if next_point in outside_points_2:
@@ -728,80 +634,57 @@ class PointSet(object):
 
                     time_point = time_step("Point add Hull:", time_point)
 
-
                 # Second set is nearer to nearest not classified point
                 else:
-
                     time_point = time_step("Find Neighbour:", time_point)
-
-                    if len(self.Set2Distances) > 0:
-                        next_point = self.Set2Distances.popitem()[0]
-                        Hull2 = self.ConvexHull2
-                        Hull2.add_points([self.get_point(next_point)], 1)
-                        inside2, added = get_points_inside_convex_hull(self.Point_List, Hull2, self.H_2,
+                    if len(self.convex_B_distances) > 0:
+                        next_point = self.convex_B_distances.popitem()[0]
+                        new_hull_C_B = ConvexHull(self.E[self.C_B], 1)
+                        new_hull_C_B.add_points([self.get_point(next_point)], 1)
+                        new_C_B, added = get_points_inside_convex_hull(self.E, new_hull_C_B, self.C_B,
                                                                        outside_points_2)
                         oracle_calls += 1
 
                         # we can add the new point to the second, the nearer set
-                        if not intersect(inside2, self.H_1):
-                            self.ConvexHull2 = Hull2
+                        if not intersect(new_C_B, self.C_A):
+                            self.C_B = new_C_B
+                            self.hull_C_B = new_hull_C_B
                             for x in added:
                                 # add to labels
                                 labels[x] = 0
-                                self.color[x] = "violet"
-                                if x in self.Set1Distances.keys():
-                                    del self.Set1Distances[x]
-                                if x in self.Set2Distances.keys():
-                                    del self.Set2Distances[x]
-                                outside_points_2.remove(x)
-                            self.H_2 = inside2
-
-
+                                self.colors_E[x] = "violet"
+                                if x in self.convex_A_distances.keys():
+                                    del self.convex_A_distances[x]
+                                if x in self.convex_B_distances.keys():
+                                    del self.convex_B_distances[x]
+                            outside_points_2 = list(set(outside_points_2) - set(added))
 
                         # we check if we can add the point to the first set
-                        # if we reach this point the first time all the other points which are classified did not change the optimal margin
+                        # if we reach this point the first time all the other E which are classified did not change the optimal margin
                         else:
-                            # Renew second half space
-                            PointsH_2 = np.ndarray(shape=(len(self.H_2), self.dim))
-                            counter = 0
-                            for i in self.H_2:
-                                PointsH_2[counter] = self.get_point(i)
-                                counter += 1
-                            self.ConvexHull2 = ConvexHull(PointsH_2, 1)
-
                             # Test first half space
-                            Hull1 = self.ConvexHull1
-                            Hull1.add_points([self.get_point(next_point)], 1)
-                            inside1, added = get_points_inside_convex_hull(self.Point_List, Hull1, self.H_1,
+                            new_hull_C_A = ConvexHull(self.E[self.C_A], 1)
+                            new_hull_C_A.add_points([self.get_point(next_point)], 1)
+                            new_C_A, added = get_points_inside_convex_hull(self.E, new_hull_C_A, self.C_A,
                                                                            outside_points_1)
                             oracle_calls += 1
 
                             # the point can be classified to the second set
-                            if not intersect(self.H_2, inside1):
-                                self.ConvexHull1 = Hull1
+                            if not intersect(self.C_B, new_C_A):
+                                self.hull_C_A = new_hull_C_A
+                                self.C_A = new_C_A
                                 for x in added:
                                     # add to labels
                                     labels[x] = 1
-                                    self.color[x] = "orange"
-                                    if x in self.Set1Distances.keys():
-                                        del self.Set1Distances[x]
-                                    if x in self.Set2Distances.keys():
-                                        del self.Set2Distances[x]
-                                    outside_points_1.remove(x)
-                                self.H_1 = inside1
-
-
-
+                                    self.colors_E[x] = "orange"
+                                    if x in self.convex_A_distances.keys():
+                                        del self.convex_A_distances[x]
+                                    if x in self.convex_B_distances.keys():
+                                        del self.convex_B_distances[x]
+                                outside_points_1 = list(set(outside_points_1) - set(added))
 
                             # we cannot classify the point
                             else:
-                                # Renew first half space
-                                PointsH_1 = np.ndarray(shape=(len(self.H_1), self.dim))
-                                counter = 0
-                                for i in self.H_1:
-                                    PointsH_1[counter] = self.get_point(i)
-                                    counter += 1
-                                self.ConvexHull1 = ConvexHull(PointsH_1, 1)
                                 if next_point in outside_points_1:
                                     outside_points_1.remove(next_point)
                                 if next_point in outside_points_2:
@@ -809,35 +692,35 @@ class PointSet(object):
 
                 time_point = time_step("Point add Hull:", time_point)
         else:
-            return ([], [], False)
+            return [], [], False
 
-        return (oracle_calls, labels, True)
+        return oracle_calls, labels, True
 
     def optimal_hull_alg(self):
         time_point = time.time()
         oracle_calls = 0
         counter = 0
-        labels = -1 * np.ones(shape=(self.N, 1))
-        outside_points_1 = [x for x in self.Set1HullDistances.keys()] + self.H_2
-        outside_points_2 = [x for x in self.Set2HullDistances.keys()] + self.H_1
+        labels = -1 * np.ones(shape=(self.size_E, 1))
+        outside_points_1 = [x for x in self.convex_A_hull_distances.keys()] + self.C_B
+        outside_points_2 = [x for x in self.convex_B_hull_distances.keys()] + self.C_A
 
         # add labels
-        for i in self.H_1:
+        for i in self.C_A:
             labels[i] = 1
-        for i in self.H_2:
+        for i in self.C_B:
             labels[i] = 0
 
         # check if hulls are intersecting
-        Hull1 = self.ConvexHull1
-        inside1, added = get_points_inside_convex_hull(self.Point_List, Hull1, self.H_1, outside_points_1)
-        self.H_1 = inside1
-        Hull2 = self.ConvexHull2
-        inside2, added = get_points_inside_convex_hull(self.Point_List, Hull2, self.H_2, outside_points_2)
-        self.H_2 = inside2
+        Hull1 = self.C_A
+        inside1, added = get_points_inside_convex_hull(self.E, Hull1, self.C_A, outside_points_1)
+        self.C_A = inside1
+        Hull2 = self.C_B
+        inside2, added = get_points_inside_convex_hull(self.E, Hull2, self.C_B, outside_points_2)
+        self.C_B = inside2
 
         if not intersect(inside1, inside2):
-            while (len(self.Set1HullDistances) > 0 or len(self.Set2HullDistances) > 0):
-                #print(len(self.Set1HullDistances), len(self.Set2HullDistances))
+            while (len(self.convex_A_hull_distances) > 0 or len(self.convex_B_hull_distances) > 0):
+                # print(len(self.Set1HullDistances), len(self.Set2HullDistances))
                 added = []
 
                 # First set is nearer to nearest not classified point
@@ -845,35 +728,35 @@ class PointSet(object):
 
                     time_point = time_step("Find Neighbour:", time_point)
 
-                    if len(self.Set1HullDistances) > 0:
-                        next_point = self.Set1HullDistances.popitem()[0]
+                    if len(self.convex_A_hull_distances) > 0:
+                        next_point = self.convex_A_hull_distances.popitem()[0]
 
-                        Hull1 = self.ConvexHull1
+                        Hull1 = self.C_A
                         Hull1.add_points([self.get_point(next_point)], 1)
-                        time_point = time_step("Adding Convex Hull points 1:", time_point)
+                        time_point = time_step("Adding Convex Hull E 1:", time_point)
 
-                        inside1, added = get_points_inside_convex_hull(self.Point_List, Hull1, self.H_1,
+                        inside1, added = get_points_inside_convex_hull(self.E, Hull1, self.C_A,
                                                                        outside_points_1)
                         oracle_calls += 1
-                        time_point = time_step("Getting inside points:", time_point)
+                        time_point = time_step("Getting inside E:", time_point)
 
                         # if there is no intersection the point can be added to the first convex set
-                        if not intersect(inside1, self.H_2):
+                        if not intersect(inside1, self.C_B):
                             time_point = time_step("Intersection Test:", time_point)
-                            self.ConvexHull1 = Hull1
-                            time_point = time_step("Adding Convex Hull points:", time_point)
+                            self.C_A = Hull1
+                            time_point = time_step("Adding Convex Hull E:", time_point)
 
                             for x in added:
                                 # add to labels
                                 labels[x] = 1
-                                self.color[x] = "orange"
-                                if x in self.Set1HullDistances.keys():
-                                    del self.Set1HullDistances[x]
-                                if x in self.Set2HullDistances.keys():
-                                    del self.Set2HullDistances[x]
+                                self.colors_E[x] = "orange"
+                                if x in self.convex_A_hull_distances.keys():
+                                    del self.convex_A_hull_distances[x]
+                                if x in self.convex_B_hull_distances.keys():
+                                    del self.convex_B_hull_distances[x]
 
                                 outside_points_1.remove(x)
-                            self.H_1 = inside1
+                            self.C_A = inside1
 
                             time_point = time_step("Update arrays:", time_point)
 
@@ -882,45 +765,45 @@ class PointSet(object):
                         else:
                             time_point = time_step("Intersection Test:", time_point)
                             # Renew first half space
-                            PointsH_1 = np.ndarray(shape=(len(self.H_1), self.dim))
+                            PointsH_1 = np.ndarray(shape=(len(self.C_A), self.dimension_E))
                             counter = 0
-                            for i in self.H_1:
+                            for i in self.C_A:
                                 PointsH_1[counter] = self.get_point(i)
                                 counter += 1
-                            self.ConvexHull1 = ConvexHull(PointsH_1, 1)
+                            self.C_A = ConvexHull(PointsH_1, 1)
 
                             # Test second half space
-                            Hull2 = self.ConvexHull2
+                            Hull2 = self.C_B
                             Hull2.add_points([self.get_point(next_point)], 1)
-                            inside2, added = get_points_inside_convex_hull(self.Point_List, Hull2, self.H_2,
+                            inside2, added = get_points_inside_convex_hull(self.E, Hull2, self.C_B,
                                                                            outside_points_2)
                             oracle_calls += 1
 
                             # the point can be added to the second set,
-                            # if we reach this point the first time all the other points which are classified did not change the optimal margin
-                            if not intersect(self.H_1, inside2):
-                                self.ConvexHull2 = Hull2
+                            # if we reach this point the first time all the other E which are classified did not change the optimal margin
+                            if not intersect(self.C_A, inside2):
+                                self.C_B = Hull2
                                 for x in added:
                                     # add to labels
                                     labels[x] = 0
-                                    self.color[x] = "violet"
-                                    if x in self.Set1HullDistances.keys():
-                                        del self.Set1HullDistances[x]
-                                    if x in self.Set2HullDistances.keys():
-                                        del self.Set2HullDistances[x]
+                                    self.colors_E[x] = "violet"
+                                    if x in self.convex_A_hull_distances.keys():
+                                        del self.convex_A_hull_distances[x]
+                                    if x in self.convex_B_hull_distances.keys():
+                                        del self.convex_B_hull_distances[x]
                                     outside_points_2.remove(x)
-                                self.H_2 = inside2
+                                self.C_B = inside2
 
 
                             # the point cannot be added to any set
                             else:
                                 # Renew second half space
-                                PointsH_2 = np.ndarray(shape=(len(self.H_2), self.dim))
+                                PointsH_2 = np.ndarray(shape=(len(self.C_B), self.dimension_E))
                                 counter = 0
-                                for i in self.H_2:
+                                for i in self.C_B:
                                     PointsH_2[counter] = self.get_point(i)
                                     counter += 1
-                                self.ConvexHull2 = ConvexHull(PointsH_2, 1)
+                                self.C_B = ConvexHull(PointsH_2, 1)
                                 if next_point in outside_points_1:
                                     outside_points_1.remove(next_point)
                                 if next_point in outside_points_2:
@@ -934,61 +817,61 @@ class PointSet(object):
 
                     time_point = time_step("Find Neighbour:", time_point)
 
-                    if len(self.Set2HullDistances) > 0:
-                        next_point = self.Set2HullDistances.popitem()[0]
-                        Hull2 = self.ConvexHull2
+                    if len(self.convex_B_hull_distances) > 0:
+                        next_point = self.convex_B_hull_distances.popitem()[0]
+                        Hull2 = self.C_B
                         Hull2.add_points([self.get_point(next_point)], 1)
-                        inside2, added = get_points_inside_convex_hull(self.Point_List, Hull2, self.H_2,
+                        inside2, added = get_points_inside_convex_hull(self.E, Hull2, self.C_B,
                                                                        outside_points_2)
                         oracle_calls += 1
 
                         # we can add the new point to the second, the nearer set
-                        if not intersect(inside2, self.H_1):
-                            self.ConvexHull2 = Hull2
+                        if not intersect(inside2, self.C_A):
+                            self.C_B = Hull2
                             for x in added:
                                 # add to labels
                                 labels[x] = 0
-                                self.color[x] = "violet"
-                                if x in self.Set1HullDistances.keys():
-                                    del self.Set1HullDistances[x]
-                                if x in self.Set2HullDistances.keys():
-                                    del self.Set2HullDistances[x]
+                                self.colors_E[x] = "violet"
+                                if x in self.convex_A_hull_distances.keys():
+                                    del self.convex_A_hull_distances[x]
+                                if x in self.convex_B_hull_distances.keys():
+                                    del self.convex_B_hull_distances[x]
                                 outside_points_2.remove(x)
-                            self.H_2 = inside2
+                            self.C_B = inside2
 
 
 
                         # we check if we can add the point to the first set
-                        # if we reach this point the first time all the other points which are classified did not change the optimal margin
+                        # if we reach this point the first time all the other E which are classified did not change the optimal margin
                         else:
                             # Renew second half space
-                            PointsH_2 = np.ndarray(shape=(len(self.H_2), self.dim))
+                            PointsH_2 = np.ndarray(shape=(len(self.C_B), self.dimension_E))
                             counter = 0
-                            for i in self.H_2:
+                            for i in self.C_B:
                                 PointsH_2[counter] = self.get_point(i)
                                 counter += 1
-                            self.ConvexHull2 = ConvexHull(PointsH_2, 1)
+                            self.C_B = ConvexHull(PointsH_2, 1)
 
                             # Test first half space
-                            Hull1 = self.ConvexHull1
+                            Hull1 = self.C_A
                             Hull1.add_points([self.get_point(next_point)], 1)
-                            inside1, added = get_points_inside_convex_hull(self.Point_List, Hull1, self.H_1,
+                            inside1, added = get_points_inside_convex_hull(self.E, Hull1, self.C_A,
                                                                            outside_points_1)
                             oracle_calls += 1
 
                             # the point can be classified to the second set
-                            if not intersect(self.H_2, inside1):
-                                self.ConvexHull1 = Hull1
+                            if not intersect(self.C_B, inside1):
+                                self.C_A = Hull1
                                 for x in added:
                                     # add to labels
                                     labels[x] = 1
-                                    self.color[x] = "orange"
-                                    if x in self.Set1HullDistances.keys():
-                                        del self.Set1HullDistances[x]
-                                    if x in self.Set2HullDistances.keys():
-                                        del self.Set2HullDistances[x]
+                                    self.colors_E[x] = "orange"
+                                    if x in self.convex_A_hull_distances.keys():
+                                        del self.convex_A_hull_distances[x]
+                                    if x in self.convex_B_hull_distances.keys():
+                                        del self.convex_B_hull_distances[x]
                                     outside_points_1.remove(x)
-                                self.H_1 = inside1
+                                self.C_A = inside1
 
 
 
@@ -996,12 +879,12 @@ class PointSet(object):
                             # we cannot classify the point
                             else:
                                 # Renew first half space
-                                PointsH_1 = np.ndarray(shape=(len(self.H_1), self.dim))
+                                PointsH_1 = np.ndarray(shape=(len(self.C_A), self.dimension_E))
                                 counter = 0
-                                for i in self.H_1:
+                                for i in self.C_A:
                                     PointsH_1[counter] = self.get_point(i)
                                     counter += 1
-                                self.ConvexHull1 = ConvexHull(PointsH_1, 1)
+                                self.C_A = ConvexHull(PointsH_1, 1)
                                 if next_point in outside_points_1:
                                     outside_points_1.remove(next_point)
                                 if next_point in outside_points_2:
@@ -1020,114 +903,114 @@ class PointSet(object):
         while len(self.F) > 0 and end == False:
             # print(len(self.F))
             if not self.decide_farthest():
-                items = list(self.Set1Distances.items())
+                items = list(self.convex_A_distances.items())
                 if len(items) > 0:
                     next_point = items[len(items) - 1][0]
 
-                    Hull1 = self.ConvexHull1
+                    Hull1 = self.C_A
                     Hull1.add_points([self.get_point(next_point)], 1)
-                    inside1 = get_points_inside_convex_hull(self.Point_List, Hull1)
+                    inside1 = get_points_inside_convex_hull(self.E, Hull1)
                     oracle_calls += 1
-                    if not intersect(inside1, self.H_2):
-                        self.ConvexHull1.add_points([self.get_point(next_point)], 1)
+                    if not intersect(inside1, self.C_B):
+                        self.C_A.add_points([self.get_point(next_point)], 1)
                         for x in inside1:
-                            if x not in self.H_1:
-                                self.color[x] = "orange"
+                            if x not in self.C_A:
+                                self.colors_E[x] = "orange"
                                 self.F.remove(x)
-                                del self.Set1Distances[x]
-                                del self.Set2Distances[x]
-                        self.H_1 = inside1
+                                del self.convex_A_distances[x]
+                                del self.convex_B_distances[x]
+                        self.C_A = inside1
 
                     else:
                         # Renew first half space
-                        PointsH_1 = np.ndarray(shape=(len(self.H_1), 2))
+                        PointsH_1 = np.ndarray(shape=(len(self.C_A), 2))
                         counter = 0
-                        for i in self.H_1:
+                        for i in self.C_A:
                             PointsH_1[counter] = self.get_point(i)
                             counter += 1
-                        self.ConvexHull1 = ConvexHull(PointsH_1, 1)
+                        self.C_A = ConvexHull(PointsH_1, 1)
 
                         # Test second half space
-                        Hull2 = self.ConvexHull2
+                        Hull2 = self.C_B
                         Hull2.add_points([self.get_point(next_point)], 1)
-                        inside2 = get_points_inside_convex_hull(self.Point_List, Hull2)
+                        inside2 = get_points_inside_convex_hull(self.E, Hull2)
                         oracle_calls += 1
 
-                        if not intersect(self.H_1, inside2):
-                            self.ConvexHull2.add_points([self.get_point(next_point)], 1)
+                        if not intersect(self.C_A, inside2):
+                            self.C_B.add_points([self.get_point(next_point)], 1)
                             for x in inside2:
-                                if x not in self.H_2:
-                                    self.color[x] = "violet"
+                                if x not in self.C_B:
+                                    self.colors_E[x] = "violet"
                                     self.F.remove(x)
-                                    del self.Set1Distances[x]
-                                    del self.Set2Distances[x]
-                            self.H_2 = inside2
+                                    del self.convex_A_distances[x]
+                                    del self.convex_B_distances[x]
+                            self.C_B = inside2
                         else:
                             # Renew second half space
-                            PointsH_2 = np.ndarray(shape=(len(self.H_2), 2))
+                            PointsH_2 = np.ndarray(shape=(len(self.C_B), 2))
                             counter = 0
-                            for i in self.H_2:
+                            for i in self.C_B:
                                 PointsH_2[counter] = self.get_point(i)
                                 counter += 1
-                            self.ConvexHull2 = ConvexHull(PointsH_2, 1)
+                            self.C_B = ConvexHull(PointsH_2, 1)
                             self.F.remove(next_point)
-                            del self.Set1Distances[next_point]
-                            del self.Set2Distances[next_point]
+                            del self.convex_A_distances[next_point]
+                            del self.convex_B_distances[next_point]
 
             else:
-                items = list(self.Set2Distances.items())
+                items = list(self.convex_B_distances.items())
                 if len(items) > 0:
                     next_point = items[len(items) - 1][0]
-                    Hull2 = self.ConvexHull2
+                    Hull2 = self.C_B
                     Hull2.add_points([self.get_point(next_point)], 1)
-                    inside2 = get_points_inside_convex_hull(self.Point_List, Hull2, self.H_2)
+                    inside2 = get_points_inside_convex_hull(self.E, Hull2, self.C_B)
                     oracle_calls += 1
 
-                    if not intersect(inside2, self.H_1):
-                        self.ConvexHull2.add_points([self.get_point(next_point)], 1)
+                    if not intersect(inside2, self.C_A):
+                        self.C_B.add_points([self.get_point(next_point)], 1)
                         for x in inside2:
-                            if x not in self.H_2:
-                                self.color[x] = "violet"
+                            if x not in self.C_B:
+                                self.colors_E[x] = "violet"
                                 self.F.remove(x)
-                                del self.Set1Distances[x]
-                                del self.Set2Distances[x]
-                        self.H_2 = inside2
+                                del self.convex_A_distances[x]
+                                del self.convex_B_distances[x]
+                        self.C_B = inside2
 
                     else:
                         # Renew second half space
-                        PointsH_2 = np.ndarray(shape=(len(self.H_2), 2))
+                        PointsH_2 = np.ndarray(shape=(len(self.C_B), 2))
                         counter = 0
-                        for i in self.H_2:
+                        for i in self.C_B:
                             PointsH_2[counter] = self.get_point(i)
                             counter += 1
-                        self.ConvexHull2 = ConvexHull(PointsH_2, 1)
+                        self.C_B = ConvexHull(PointsH_2, 1)
 
                         # Test first half space
-                        Hull1 = self.ConvexHull1
+                        Hull1 = self.C_A
                         Hull1.add_points([self.get_point(next_point)], 1)
-                        inside1 = get_points_inside_convex_hull(self.Point_List, Hull1)
+                        inside1 = get_points_inside_convex_hull(self.E, Hull1)
                         oracle_calls += 1
 
-                        if not intersect(self.H_2, inside1):
-                            self.ConvexHull1.add_points([self.get_point(next_point)], 1)
+                        if not intersect(self.C_B, inside1):
+                            self.C_A.add_points([self.get_point(next_point)], 1)
                             for x in inside1:
-                                if x not in self.H_1:
-                                    self.color[x] = "orange"
+                                if x not in self.C_A:
+                                    self.colors_E[x] = "orange"
                                     self.F.remove(x)
-                                    del self.Set1Distances[x]
-                                    del self.Set2Distances[x]
-                            self.H_1 = inside1
+                                    del self.convex_A_distances[x]
+                                    del self.convex_B_distances[x]
+                            self.C_A = inside1
                         else:
                             # Renew first half space
-                            PointsH_1 = np.ndarray(shape=(len(self.H_1), 2))
+                            PointsH_1 = np.ndarray(shape=(len(self.C_A), 2))
                             counter = 0
-                            for i in self.H_1:
+                            for i in self.C_A:
                                 PointsH_1[counter] = self.get_point(i)
                                 counter += 1
-                            self.ConvexHull1 = ConvexHull(PointsH_1, 1)
+                            self.C_A = ConvexHull(PointsH_1, 1)
                             self.F.remove(next_point)
-                            del self.Set1Distances[next_point]
-                            del self.Set2Distances[next_point]
+                            del self.convex_A_distances[next_point]
+                            del self.convex_B_distances[next_point]
 
         return oracle_calls
 
@@ -1179,21 +1062,21 @@ def get_inside_points(Points, X, Outside, add_point="", CheckSet=""):
     return inside_points, added_points, False
 
 
-def get_points_inside_convex_hull(Set, Hull, inside, outside_points, added_point=""):
-    inside_points = inside.copy()
+def get_points_inside_convex_hull(E, convex_hull, inside_p, outside_points, added_point=""):
+    inside_points = inside_p.copy()
     added_points = []
     for i in outside_points:
-        point = Set[i]
+        point = E[i]
         inside = True
-        for face in Hull.equations:
+        for face in convex_hull.equations:
             c = np.dot(point, face[:-1]) + face[-1]  # point[0]*face[0] + point[1]*face[1] + face[2]
             # print(i, point, c)
-            if c < 1e-14 and c > 0:  # 0.0000000000000005
+            if 1e-14 > c > 0:  # 0.0000000000000005
                 c = 0
-            if (c > 0):
+            if c > 0:
                 inside = False
                 break
-        if (inside == True):
+        if inside == True:
             inside_points.append(i)
             added_points.append(i)
 
@@ -1230,7 +1113,7 @@ def random_point_set(number, dimension, start_points1_number, start_points2_numb
                 Point_List[i] = [X_coord[i], Y_coord[i]]
 
         # start point dense
-        # set the start points 0 and number//2 and find neighbours
+        # set the start E 0 and number//2 and find neighbours
         start_pointsA = [0]
         start_pointsB = [number // 2]
         dist_points = 0.2
@@ -1295,6 +1178,7 @@ def time_step(string_name, time_point, level=1):
         tabs += "\t"
     # print(tabs, string_name, time_dur, "s")
     return time_point
+
 
 def plot_svm(ax, model):
     xlim = ax.get_xlim()
@@ -1630,49 +1514,49 @@ def add_row_to_database(databasename, table_name, column_list, X, y, classificat
     con.close()
 
 
-def set_training_testing(X, y, num_red, num_green, seed=0):
+def set_training_testing(E, E_labels, A_size, B_size, seed=0):
     # Generate samples
-    pos_points = []
-    neg_points = []
+    A_elements = []
+    B_elements = []
 
-    training_points = np.zeros(shape=(num_red + num_green, X.shape[1]))
-    test_points = np.zeros(shape=(len(X) - num_red + num_green, X.shape[1]))
-    training_labels = np.zeros(shape=(num_red + num_green, 1))
-    test_labels = np.zeros(shape=(len(X) - num_red + num_green, 1))
+    A_B_vectors = np.zeros(shape=(A_size + B_size, E.shape[1]))
+    test_points = np.zeros(shape=(len(E) - A_size + B_size, E.shape[1]))
+    A_B_labels = np.zeros(shape=(A_size + B_size, 1))
+    test_labels = np.zeros(shape=(len(E) - A_size + B_size, 1))
 
     counter = 0
-    random_training = np.zeros(shape=(len(X), 1))
-    while counter != len(X) or (len(pos_points) < num_red and len(neg_points) < num_green):
-        #random.seed(seed)
-        elem = random.randint(0, len(X) - 1)
+    random_training = np.zeros(shape=(len(E), 1))
+    while counter != len(E) or (len(A_elements) < A_size and len(B_elements) < B_size):
+        # random.seed(seed)
+        elem = random.randint(0, len(E) - 1)
         if random_training[elem] == 0:
-            if y[elem] == 1 and len(pos_points) < num_red:
-                pos_points.append(elem)
-            elif y[elem] == 0 and len(neg_points) < num_green:
-                neg_points.append(elem)
+            if E_labels[elem] == 1 and len(A_elements) < A_size:
+                A_elements.append(elem)
+            elif E_labels[elem] == 0 and len(B_elements) < B_size:
+                B_elements.append(elem)
             random_training[elem] = 1
             counter += 1
 
-    # Set training and test sets
+    # E training and test sets
     counter = 0
     counter1 = 0
     counter2 = 0
-    for x in X:
-        if counter in pos_points:
-            training_points[counter1] = X[counter]
-            training_labels[counter1] = 1
+    for x in E:
+        if counter in A_elements:
+            A_B_vectors[counter1] = E[counter]
+            A_B_labels[counter1] = 1
             counter1 += 1
-        elif counter in neg_points:
-            training_points[counter1] = X[counter]
-            training_labels[counter1] = 0
+        elif counter in B_elements:
+            A_B_vectors[counter1] = E[counter]
+            A_B_labels[counter1] = 0
             counter1 += 1
         else:
-            test_points[counter2] = X[counter]
-            test_labels[counter2] = y[counter]
+            test_points[counter2] = E[counter]
+            test_labels[counter2] = E_labels[counter]
             counter2 += 1
         counter += 1
 
-    return pos_points, neg_points, training_points, training_labels, test_points, test_labels
+    return A_elements, B_elements, A_B_vectors, A_B_labels, test_points, test_labels
 
 
 def load_data(file_path, max_number, n_features=3, max_labels=1):
@@ -1697,5 +1581,5 @@ def load_data(file_path, max_number, n_features=3, max_labels=1):
             else:
                 y[counter][0] = 1
         counter += 1
-    # X, y = _convert_arff_data(data, 3, 1)
-    # X, y = load_breast_cancer(True)
+    # E, E_labels = _convert_arff_data(data, 3, 1)
+    # E, E_labels = load_breast_cancer(True)

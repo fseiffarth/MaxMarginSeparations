@@ -26,14 +26,14 @@ def plot_3d_data_colorbar(data, y_label_list, x_label_list, y_label_name_list=No
 
     :param data: 2d numpy array of data values
     :param x_label_list: list of x-label values for the plot ticks
-    :param y_label_list: list of y-label values for the plot ticks
+    :param y_label_list: list of E_labels-label values for the plot ticks
     :param x_label_name_list: list of x-label names for the ticks
-    :param y_label_name_list: list of y-label names for the ticks
+    :param y_label_name_list: list of E_labels-label names for the ticks
     :param min_val: minimum value for the colorbar
     :param max_val: maximum value for the colorbar
     :param heading: heading of the plot
     :param x_label_name: x-label name of the plot
-    :param y_label_name: y-label name of the plot
+    :param y_label_name: E_labels-label name of the plot
     :param colormap: colormap of the plot
     :param colorbar_label: label of the colorbar of the plot
     :param tikz_save: if false then data is plotted, else give path where tikz file is stored

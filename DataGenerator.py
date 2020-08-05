@@ -1,7 +1,7 @@
 from sklearn import svm
 from sklearn.datasets import make_blobs
 
-from Algos import PointSet, set_training_testing, plot
+from Algos import ClassificationPointSet, set_training_testing, plot
 import numpy as np
 from mathutils.geometry import intersect_line_plane
 
