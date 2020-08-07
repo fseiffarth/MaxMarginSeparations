@@ -1061,7 +1061,7 @@ class graph_generation(object):
         if node_class == 0 or node_class == "blue":
             return self.blue_nodes
 
-    """print all classes of nodes of the graph"""
+    """print all labels of nodes of the graph"""
 
     def print_classes(self):
         print("Red nodes: {0}, Green nodes: {1}, Blue nodes: {2}".format(self.red_nodes, self.green_nodes,

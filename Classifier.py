@@ -4,6 +4,7 @@ Created on 06.09.2018
 @author: florian
 '''
 from Algos import *
+from BinarySeparation import BinarySeparation
 
 
 def convex_hull_classifier(classifier="opt", plotting=False, dimension=3, number_of_points=100, number_runs=1, training_size_a=3,
@@ -15,7 +16,7 @@ def convex_hull_classifier(classifier="opt", plotting=False, dimension=3, number
             (E, set_a, set_b) = random_point_set(number_of_points, dimension, training_size_a, training_size_b)
         else:
             (E, set_a, set_b) = (E, A_elements, B_elements)
-        classification_setup = ClassificationPointSet(E=E, A=set_a, B=set_b)
+        classification_setup = BinarySeparation(E=E, A=set_a, B=set_b)
         # classification_setup.plot_3d()
 
         separable = False
