@@ -12,7 +12,6 @@ from scipy.spatial import ConvexHull
 import numpy as np
 import matplotlib.pyplot as plt
 import tikzplotlib
-from PyGEL3D import gel
 
 
 from Algos import get_points_inside_convex_hull, intersect, get_inside_points, time_step, dist
@@ -95,7 +94,7 @@ class BinarySeparation(object):
             counter += 1
         self.C_B = ConvexHull(PointsH_2, 1)
 
-        # Draw convex hulls of disjoint convex sets
+        # Draw convex initial_hulls of disjoint convex sets
         for simplex in self.C_A.simplices:
             plt.plot(self.C_A.points[simplex, 0], self.C_A.points[simplex, 1], 'k-')
         for simplex in self.C_B.simplices:
@@ -258,7 +257,7 @@ class BinarySeparation(object):
         del self.convex_B_distances[point]
         del self.convex_A_distances[point]
 
-    # SeCos-Algorithm from paper applied to convex hulls in R^d
+    # SeCos-Algorithm from paper applied to convex initial_hulls in R^d
     def greedy_alg(self):
         end = False
         oracle_calls = 0
@@ -328,7 +327,7 @@ class BinarySeparation(object):
         for i in self.C_B:
             labels[i] = 0
 
-        # E initial hulls
+        # E initial initial_hulls
         inside1, added, intersection = get_inside_points(self.E, self.C_A, self.F, CheckSet=self.C_B)
         oracle_calls += 1
 
@@ -338,7 +337,7 @@ class BinarySeparation(object):
                 self.colors_E[x] = "orange"
             self.C_A = inside1
 
-        # E initial hulls
+        # E initial initial_hulls
         inside2, added, intersection = get_inside_points(self.E, self.C_B, self.F, CheckSet=self.C_A)
         oracle_calls += 1
 
@@ -404,7 +403,7 @@ class BinarySeparation(object):
         for i in self.C_B:
             labels[i] = 0
 
-        # E initial hulls
+        # E initial initial_hulls
         Hull1 = self.C_A
         inside1, added = get_points_inside_convex_hull(self.E, Hull1, self.C_A, self.F + self.C_B)
         oracle_calls += 1
@@ -415,7 +414,7 @@ class BinarySeparation(object):
                 self.colors_E[x] = "orange"
             self.C_A = inside1
 
-        # E initial hulls
+        # E initial initial_hulls
         Hull2 = self.C_B
         inside2, added = get_points_inside_convex_hull(self.E, Hull2, self.C_B, self.F + self.C_A)
         oracle_calls += 1
@@ -699,7 +698,7 @@ class BinarySeparation(object):
         for i in self.C_B:
             labels[i] = 0
 
-        # check if hulls are intersecting
+        # check if initial_hulls are intersecting
         Hull1 = self.C_A
         inside1, added = get_points_inside_convex_hull(self.E, Hull1, self.C_A, outside_points_1)
         self.C_A = inside1

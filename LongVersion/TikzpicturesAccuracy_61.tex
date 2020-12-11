@@ -1,0 +1,48 @@
+% This file was created by tikzplotlib v0.9.1.
+\begin{tikzpicture}
+
+\definecolor{color0}{rgb}{0.75,0.75,0}
+
+\begin{axis}[
+tick align=outside,
+tick pos=left,
+x grid style={white!69.0196078431373!black},
+xmin=1.65, xmax=31.35,
+xtick style={color=black},
+y grid style={white!69.0196078431373!black},
+ymin=0.811581755860891, ymax=0.951623061349265,
+ytick style={color=black}
+]
+\addplot [semithick, blue, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.868480725623583
+15 0.94525754746343
+30 0.944899106491502
+};
+\addplot [semithick, red, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.873015873015873
+15 0.936201888162673
+30 0.941343645146889
+};
+\addplot [semithick, color0, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.873015873015873
+15 0.822222222222222
+30 0.817947269746726
+};
+\addplot [semithick, green!50!black, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.873015873015873
+15 0.935947712418301
+30 0.941229425977075
+};
+\addplot [semithick, green!50!black, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.873015873015873
+15 0.935947712418301
+30 0.94115379965779
+};
+\end{axis}
+
+\end{tikzpicture}

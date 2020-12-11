@@ -1,0 +1,776 @@
+% This file was created by tikzplotlib v0.9.3.
+\begin{tikzpicture}
+
+\definecolor{color0}{rgb}{0.933333333333333,0.509803921568627,0.933333333333333}
+\definecolor{color1}{rgb}{1,1,0}
+\definecolor{color2}{rgb}{1,0.752941176470588,0.796078431372549}
+
+\begin{groupplot}[group style={group size=2 by 3}]
+\nextgroupplot[
+tick align=outside,
+tick pos=left,
+x grid style={white!69.0196078431373!black},
+xlabel={Training Set Size},
+xmin=2.7, xmax=9.3,
+xtick style={color=black},
+y grid style={white!69.0196078431373!black},
+ylabel={Accuracy},
+ymin=0.203852327513802, ymax=0.831587363585244,
+ytick style={color=black}
+]
+\path [fill=blue, fill opacity=0.2]
+(axis cs:3,0.471597356907023)
+--(axis cs:3,0.601530944625407)
+--(axis cs:9,0.73531561461794)
+--(axis cs:9,0.667577276381156)
+--(axis cs:9,0.667577276381156)
+--(axis cs:3,0.471597356907023)
+--cycle;
+
+\path [fill=blue, fill opacity=0.2]
+(axis cs:3,0.731464532343791)
+--(axis cs:3,0.601530944625407)
+--(axis cs:9,0.73531561461794)
+--(axis cs:9,0.803053952854724)
+--(axis cs:9,0.803053952854724)
+--(axis cs:3,0.731464532343791)
+--cycle;
+
+\path [fill=red, fill opacity=0.2]
+(axis cs:3,0.232385738244322)
+--(axis cs:3,0.26532631369121)
+--(axis cs:9,0.280180376463866)
+--(axis cs:9,0.236127811346136)
+--(axis cs:9,0.236127811346136)
+--(axis cs:3,0.232385738244322)
+--cycle;
+
+\path [fill=red, fill opacity=0.2]
+(axis cs:3,0.298266889138098)
+--(axis cs:3,0.26532631369121)
+--(axis cs:9,0.280180376463866)
+--(axis cs:9,0.324232941581595)
+--(axis cs:9,0.324232941581595)
+--(axis cs:3,0.298266889138098)
+--cycle;
+
+\path [fill=color0, fill opacity=0.2]
+(axis cs:3,0.416699685494699)
+--(axis cs:3,0.542231506590398)
+--(axis cs:9,0.653827673498508)
+--(axis cs:9,0.570242373899777)
+--(axis cs:9,0.570242373899777)
+--(axis cs:3,0.416699685494699)
+--cycle;
+
+\path [fill=color0, fill opacity=0.2]
+(axis cs:3,0.667763327686096)
+--(axis cs:3,0.542231506590398)
+--(axis cs:9,0.653827673498508)
+--(axis cs:9,0.737412973097239)
+--(axis cs:9,0.737412973097239)
+--(axis cs:3,0.667763327686096)
+--cycle;
+
+\path [fill=color1, fill opacity=0.2]
+(axis cs:3,0.238533481309458)
+--(axis cs:3,0.323192182410423)
+--(axis cs:9,0.359966777408638)
+--(axis cs:9,0.304992924716087)
+--(axis cs:9,0.304992924716087)
+--(axis cs:3,0.238533481309458)
+--cycle;
+
+\path [fill=color1, fill opacity=0.2]
+(axis cs:3,0.407850883511389)
+--(axis cs:3,0.323192182410423)
+--(axis cs:9,0.359966777408638)
+--(axis cs:9,0.414940630101188)
+--(axis cs:9,0.414940630101188)
+--(axis cs:3,0.407850883511389)
+--cycle;
+
+\path [fill=green!50.1960784313725!black, fill opacity=0.2]
+(axis cs:3,0.309305024893556)
+--(axis cs:3,0.407980456026058)
+--(axis cs:9,0.464983388704319)
+--(axis cs:9,0.403406016904766)
+--(axis cs:9,0.403406016904766)
+--(axis cs:3,0.309305024893556)
+--cycle;
+
+\path [fill=green!50.1960784313725!black, fill opacity=0.2]
+(axis cs:3,0.506655887158561)
+--(axis cs:3,0.407980456026058)
+--(axis cs:9,0.464983388704319)
+--(axis cs:9,0.526560760503872)
+--(axis cs:9,0.526560760503872)
+--(axis cs:3,0.506655887158561)
+--cycle;
+
+\path [fill=color2, fill opacity=0.2]
+(axis cs:3,0.324169676929951)
+--(axis cs:3,0.421009771986971)
+--(axis cs:9,0.471860465116279)
+--(axis cs:9,0.404712265611892)
+--(axis cs:9,0.404712265611892)
+--(axis cs:3,0.324169676929951)
+--cycle;
+
+\path [fill=color2, fill opacity=0.2]
+(axis cs:3,0.51784986704399)
+--(axis cs:3,0.421009771986971)
+--(axis cs:9,0.471860465116279)
+--(axis cs:9,0.539008664620667)
+--(axis cs:9,0.539008664620667)
+--(axis cs:3,0.51784986704399)
+--cycle;
+
+\addplot [semithick, blue, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.601530944625407
+9 0.73531561461794
+};
+\addplot [semithick, red, mark=x, mark size=3, mark options={solid}]
+table {%
+3 0.26532631369121
+9 0.280180376463866
+};
+\addplot [semithick, color0, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.542231506590398
+9 0.653827673498508
+};
+\addplot [semithick, color1, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.323192182410423
+9 0.359966777408638
+};
+\addplot [semithick, green!50.1960784313725!black, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.407980456026058
+9 0.464983388704319
+};
+\addplot [semithick, color2, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.421009771986971
+9 0.471860465116279
+};
+
+\nextgroupplot[
+tick align=outside,
+tick pos=left,
+x grid style={white!69.0196078431373!black},
+xlabel={Training Set Size},
+xmin=2.7, xmax=9.3,
+xtick style={color=black},
+y grid style={white!69.0196078431373!black},
+ylabel={AccuracyW},
+ymin=0.156376061230691, ymax=0.799050357824692,
+ytick style={color=black}
+]
+\path [fill=blue, fill opacity=0.2]
+(axis cs:3,0.487635672558539)
+--(axis cs:3,0.589019175947853)
+--(axis cs:9,0.697401321172347)
+--(axis cs:9,0.624964752547002)
+--(axis cs:9,0.624964752547002)
+--(axis cs:3,0.487635672558539)
+--cycle;
+
+\path [fill=blue, fill opacity=0.2]
+(axis cs:3,0.690402679337167)
+--(axis cs:3,0.589019175947853)
+--(axis cs:9,0.697401321172347)
+--(axis cs:9,0.769837889797692)
+--(axis cs:9,0.769837889797692)
+--(axis cs:3,0.690402679337167)
+--cycle;
+
+\path [fill=red, fill opacity=0.2]
+(axis cs:3,0.185588529257691)
+--(axis cs:3,0.231550751897698)
+--(axis cs:9,0.24612134164572)
+--(axis cs:9,0.202411031219403)
+--(axis cs:9,0.202411031219403)
+--(axis cs:3,0.185588529257691)
+--cycle;
+
+\path [fill=red, fill opacity=0.2]
+(axis cs:3,0.277512974537705)
+--(axis cs:3,0.231550751897698)
+--(axis cs:9,0.24612134164572)
+--(axis cs:9,0.289831652072036)
+--(axis cs:9,0.289831652072036)
+--(axis cs:3,0.277512974537705)
+--cycle;
+
+\path [fill=color0, fill opacity=0.2]
+(axis cs:3,0.239398365664164)
+--(axis cs:3,0.31634629386421)
+--(axis cs:9,0.342423806201808)
+--(axis cs:9,0.277306613943)
+--(axis cs:9,0.277306613943)
+--(axis cs:3,0.239398365664164)
+--cycle;
+
+\path [fill=color0, fill opacity=0.2]
+(axis cs:3,0.393294222064256)
+--(axis cs:3,0.31634629386421)
+--(axis cs:9,0.342423806201808)
+--(axis cs:9,0.407540998460616)
+--(axis cs:9,0.407540998460616)
+--(axis cs:3,0.393294222064256)
+--cycle;
+
+\path [fill=color1, fill opacity=0.2]
+(axis cs:3,0.329410552629322)
+--(axis cs:3,0.397559533453061)
+--(axis cs:9,0.43844054170773)
+--(axis cs:9,0.390855945864341)
+--(axis cs:9,0.390855945864341)
+--(axis cs:3,0.329410552629322)
+--cycle;
+
+\path [fill=color1, fill opacity=0.2]
+(axis cs:3,0.4657085142768)
+--(axis cs:3,0.397559533453061)
+--(axis cs:9,0.43844054170773)
+--(axis cs:9,0.48602513755112)
+--(axis cs:9,0.48602513755112)
+--(axis cs:3,0.4657085142768)
+--cycle;
+
+\path [fill=green!50.1960784313725!black, fill opacity=0.2]
+(axis cs:3,0.369094416821756)
+--(axis cs:3,0.450522419814878)
+--(axis cs:9,0.502113260569194)
+--(axis cs:9,0.4456607485177)
+--(axis cs:9,0.4456607485177)
+--(axis cs:3,0.369094416821756)
+--cycle;
+
+\path [fill=green!50.1960784313725!black, fill opacity=0.2]
+(axis cs:3,0.531950422808001)
+--(axis cs:3,0.450522419814878)
+--(axis cs:9,0.502113260569194)
+--(axis cs:9,0.558565772620688)
+--(axis cs:9,0.558565772620688)
+--(axis cs:3,0.531950422808001)
+--cycle;
+
+\path [fill=color2, fill opacity=0.2]
+(axis cs:3,0.375651970105412)
+--(axis cs:3,0.45679440673753)
+--(axis cs:9,0.501593810249728)
+--(axis cs:9,0.443935110861659)
+--(axis cs:9,0.443935110861659)
+--(axis cs:3,0.375651970105412)
+--cycle;
+
+\path [fill=color2, fill opacity=0.2]
+(axis cs:3,0.537936843369648)
+--(axis cs:3,0.45679440673753)
+--(axis cs:9,0.501593810249728)
+--(axis cs:9,0.559252509637797)
+--(axis cs:9,0.559252509637797)
+--(axis cs:3,0.537936843369648)
+--cycle;
+
+\addplot [semithick, blue, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.589019175947853
+9 0.697401321172347
+};
+\addplot [semithick, red, mark=x, mark size=3, mark options={solid}]
+table {%
+3 0.231550751897698
+9 0.24612134164572
+};
+\addplot [semithick, color0, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.31634629386421
+9 0.342423806201808
+};
+\addplot [semithick, color1, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.397559533453061
+9 0.43844054170773
+};
+\addplot [semithick, green!50.1960784313725!black, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.450522419814878
+9 0.502113260569194
+};
+\addplot [semithick, color2, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.45679440673753
+9 0.501593810249728
+};
+
+\nextgroupplot[
+tick align=outside,
+tick pos=left,
+x grid style={white!69.0196078431373!black},
+xlabel={Training Set Size},
+xmin=2.7, xmax=9.3,
+xtick style={color=black},
+y grid style={white!69.0196078431373!black},
+ylabel={Coverage},
+ymin=0.361797116697788, ymax=1.03039061349058,
+ytick style={color=black}
+]
+\path [fill=blue, fill opacity=0.2]
+(axis cs:3,1)
+--(axis cs:3,1)
+--(axis cs:9,1)
+--(axis cs:9,1)
+--(axis cs:9,1)
+--(axis cs:3,1)
+--cycle;
+
+\path [fill=blue, fill opacity=0.2]
+(axis cs:3,1)
+--(axis cs:3,1)
+--(axis cs:9,1)
+--(axis cs:9,1)
+--(axis cs:9,1)
+--(axis cs:3,1)
+--cycle;
+
+\path [fill=red, fill opacity=0.2]
+(axis cs:3,0.420633493724735)
+--(axis cs:3,0.516872964169381)
+--(axis cs:9,0.537641196013289)
+--(axis cs:9,0.45870267600175)
+--(axis cs:9,0.45870267600175)
+--(axis cs:3,0.420633493724735)
+--cycle;
+
+\path [fill=red, fill opacity=0.2]
+(axis cs:3,0.613112434614028)
+--(axis cs:3,0.516872964169381)
+--(axis cs:9,0.537641196013289)
+--(axis cs:9,0.616579716024828)
+--(axis cs:9,0.616579716024828)
+--(axis cs:3,0.613112434614028)
+--cycle;
+
+\path [fill=color0, fill opacity=0.2]
+(axis cs:3,0.4235920788486)
+--(axis cs:3,0.509250814332248)
+--(axis cs:9,0.478405315614618)
+--(axis cs:9,0.392187730188369)
+--(axis cs:9,0.392187730188369)
+--(axis cs:3,0.4235920788486)
+--cycle;
+
+\path [fill=color0, fill opacity=0.2]
+(axis cs:3,0.594909549815895)
+--(axis cs:3,0.509250814332248)
+--(axis cs:9,0.478405315614618)
+--(axis cs:9,0.564622901040867)
+--(axis cs:9,0.564622901040867)
+--(axis cs:3,0.594909549815895)
+--cycle;
+
+\path [fill=color1, fill opacity=0.2]
+(axis cs:3,1)
+--(axis cs:3,1)
+--(axis cs:9,1)
+--(axis cs:9,1)
+--(axis cs:9,1)
+--(axis cs:3,1)
+--cycle;
+
+\path [fill=color1, fill opacity=0.2]
+(axis cs:3,1)
+--(axis cs:3,1)
+--(axis cs:9,1)
+--(axis cs:9,1)
+--(axis cs:9,1)
+--(axis cs:3,1)
+--cycle;
+
+\path [fill=green!50.1960784313725!black, fill opacity=0.2]
+(axis cs:3,1)
+--(axis cs:3,1)
+--(axis cs:9,1)
+--(axis cs:9,1)
+--(axis cs:9,1)
+--(axis cs:3,1)
+--cycle;
+
+\path [fill=green!50.1960784313725!black, fill opacity=0.2]
+(axis cs:3,1)
+--(axis cs:3,1)
+--(axis cs:9,1)
+--(axis cs:9,1)
+--(axis cs:9,1)
+--(axis cs:3,1)
+--cycle;
+
+\path [fill=color2, fill opacity=0.2]
+(axis cs:3,1)
+--(axis cs:3,1)
+--(axis cs:9,1)
+--(axis cs:9,1)
+--(axis cs:9,1)
+--(axis cs:3,1)
+--cycle;
+
+\path [fill=color2, fill opacity=0.2]
+(axis cs:3,1)
+--(axis cs:3,1)
+--(axis cs:9,1)
+--(axis cs:9,1)
+--(axis cs:9,1)
+--(axis cs:3,1)
+--cycle;
+
+\addplot [semithick, blue, mark=*, mark size=3, mark options={solid}]
+table {%
+3 1
+9 1
+};
+\addplot [semithick, red, mark=x, mark size=3, mark options={solid}]
+table {%
+3 0.516872964169381
+9 0.537641196013289
+};
+\addplot [semithick, color0, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.509250814332248
+9 0.478405315614618
+};
+\addplot [semithick, color1, mark=*, mark size=3, mark options={solid}]
+table {%
+3 1
+9 1
+};
+\addplot [semithick, green!50.1960784313725!black, mark=*, mark size=3, mark options={solid}]
+table {%
+3 1
+9 1
+};
+\addplot [semithick, color2, mark=*, mark size=3, mark options={solid}]
+table {%
+3 1
+9 1
+};
+
+\nextgroupplot[
+tick align=outside,
+tick pos=left,
+x grid style={white!69.0196078431373!black},
+xlabel={Training Set Size},
+xmin=2.7, xmax=9.3,
+xtick style={color=black},
+y grid style={white!69.0196078431373!black},
+ylabel={CoverageW},
+ymin=0.156376061230691, ymax=0.799050357824692,
+ytick style={color=black}
+]
+\path [fill=blue, fill opacity=0.2]
+(axis cs:3,0.487635672558539)
+--(axis cs:3,0.589019175947853)
+--(axis cs:9,0.697401321172347)
+--(axis cs:9,0.624964752547002)
+--(axis cs:9,0.624964752547002)
+--(axis cs:3,0.487635672558539)
+--cycle;
+
+\path [fill=blue, fill opacity=0.2]
+(axis cs:3,0.690402679337167)
+--(axis cs:3,0.589019175947853)
+--(axis cs:9,0.697401321172347)
+--(axis cs:9,0.769837889797692)
+--(axis cs:9,0.769837889797692)
+--(axis cs:3,0.690402679337167)
+--cycle;
+
+\path [fill=red, fill opacity=0.2]
+(axis cs:3,0.185588529257691)
+--(axis cs:3,0.231550751897698)
+--(axis cs:9,0.24612134164572)
+--(axis cs:9,0.202411031219403)
+--(axis cs:9,0.202411031219403)
+--(axis cs:3,0.185588529257691)
+--cycle;
+
+\path [fill=red, fill opacity=0.2]
+(axis cs:3,0.277512974537705)
+--(axis cs:3,0.231550751897698)
+--(axis cs:9,0.24612134164572)
+--(axis cs:9,0.289831652072036)
+--(axis cs:9,0.289831652072036)
+--(axis cs:3,0.277512974537705)
+--cycle;
+
+\path [fill=color0, fill opacity=0.2]
+(axis cs:3,0.239398365664164)
+--(axis cs:3,0.31634629386421)
+--(axis cs:9,0.342423806201808)
+--(axis cs:9,0.277306613943)
+--(axis cs:9,0.277306613943)
+--(axis cs:3,0.239398365664164)
+--cycle;
+
+\path [fill=color0, fill opacity=0.2]
+(axis cs:3,0.393294222064256)
+--(axis cs:3,0.31634629386421)
+--(axis cs:9,0.342423806201808)
+--(axis cs:9,0.407540998460616)
+--(axis cs:9,0.407540998460616)
+--(axis cs:3,0.393294222064256)
+--cycle;
+
+\path [fill=color1, fill opacity=0.2]
+(axis cs:3,0.329410552629322)
+--(axis cs:3,0.397559533453061)
+--(axis cs:9,0.43844054170773)
+--(axis cs:9,0.390855945864341)
+--(axis cs:9,0.390855945864341)
+--(axis cs:3,0.329410552629322)
+--cycle;
+
+\path [fill=color1, fill opacity=0.2]
+(axis cs:3,0.4657085142768)
+--(axis cs:3,0.397559533453061)
+--(axis cs:9,0.43844054170773)
+--(axis cs:9,0.48602513755112)
+--(axis cs:9,0.48602513755112)
+--(axis cs:3,0.4657085142768)
+--cycle;
+
+\path [fill=green!50.1960784313725!black, fill opacity=0.2]
+(axis cs:3,0.369094416821756)
+--(axis cs:3,0.450522419814878)
+--(axis cs:9,0.502113260569194)
+--(axis cs:9,0.4456607485177)
+--(axis cs:9,0.4456607485177)
+--(axis cs:3,0.369094416821756)
+--cycle;
+
+\path [fill=green!50.1960784313725!black, fill opacity=0.2]
+(axis cs:3,0.531950422808001)
+--(axis cs:3,0.450522419814878)
+--(axis cs:9,0.502113260569194)
+--(axis cs:9,0.558565772620688)
+--(axis cs:9,0.558565772620688)
+--(axis cs:3,0.531950422808001)
+--cycle;
+
+\path [fill=color2, fill opacity=0.2]
+(axis cs:3,0.375651970105412)
+--(axis cs:3,0.45679440673753)
+--(axis cs:9,0.501593810249728)
+--(axis cs:9,0.443935110861659)
+--(axis cs:9,0.443935110861659)
+--(axis cs:3,0.375651970105412)
+--cycle;
+
+\path [fill=color2, fill opacity=0.2]
+(axis cs:3,0.537936843369648)
+--(axis cs:3,0.45679440673753)
+--(axis cs:9,0.501593810249728)
+--(axis cs:9,0.559252509637797)
+--(axis cs:9,0.559252509637797)
+--(axis cs:3,0.537936843369648)
+--cycle;
+
+\addplot [semithick, blue, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.589019175947853
+9 0.697401321172347
+};
+\addplot [semithick, red, mark=x, mark size=3, mark options={solid}]
+table {%
+3 0.231550751897698
+9 0.24612134164572
+};
+\addplot [semithick, color0, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.31634629386421
+9 0.342423806201808
+};
+\addplot [semithick, color1, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.397559533453061
+9 0.43844054170773
+};
+\addplot [semithick, green!50.1960784313725!black, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.450522419814878
+9 0.502113260569194
+};
+\addplot [semithick, color2, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.45679440673753
+9 0.501593810249728
+};
+
+\nextgroupplot[
+tick align=outside,
+tick pos=left,
+x grid style={white!69.0196078431373!black},
+xlabel={Training Set Size},
+xmin=2.7, xmax=9.3,
+xtick style={color=black},
+y grid style={white!69.0196078431373!black},
+ylabel={Runtime},
+ymin=-1.04857634271998, ymax=22.0406733398315,
+ytick style={color=black}
+]
+\path [fill=blue, fill opacity=0.2]
+(axis cs:3,0.000935006486902103)
+--(axis cs:3,0.000986804962158203)
+--(axis cs:9,0.00105173349380493)
+--(axis cs:9,0.000966991378429569)
+--(axis cs:9,0.000966991378429569)
+--(axis cs:3,0.000935006486902103)
+--cycle;
+
+\path [fill=blue, fill opacity=0.2]
+(axis cs:3,0.0010386034374143)
+--(axis cs:3,0.000986804962158203)
+--(axis cs:9,0.00105173349380493)
+--(axis cs:9,0.00113647560918029)
+--(axis cs:9,0.00113647560918029)
+--(axis cs:3,0.0010386034374143)
+--cycle;
+
+\path [fill=red, fill opacity=0.2]
+(axis cs:3,4.71242139276213)
+--(axis cs:3,6.18239305019379)
+--(axis cs:9,6.22238455057144)
+--(axis cs:9,5.12062787066025)
+--(axis cs:9,5.12062787066025)
+--(axis cs:3,4.71242139276213)
+--cycle;
+
+\path [fill=red, fill opacity=0.2]
+(axis cs:3,7.65236470762545)
+--(axis cs:3,6.18239305019379)
+--(axis cs:9,6.22238455057144)
+--(axis cs:9,7.32414123048263)
+--(axis cs:9,7.32414123048263)
+--(axis cs:3,7.65236470762545)
+--cycle;
+
+\path [fill=color0, fill opacity=0.2]
+(axis cs:3,1.55969936819727)
+--(axis cs:3,3.05621681928635)
+--(axis cs:9,2.15978385448456)
+--(axis cs:9,1.37955010059468)
+--(axis cs:9,1.37955010059468)
+--(axis cs:3,1.55969936819727)
+--cycle;
+
+\path [fill=color0, fill opacity=0.2]
+(axis cs:3,4.55273427037543)
+--(axis cs:3,3.05621681928635)
+--(axis cs:9,2.15978385448456)
+--(axis cs:9,2.94001760837443)
+--(axis cs:9,2.94001760837443)
+--(axis cs:3,4.55273427037543)
+--cycle;
+
+\path [fill=color1, fill opacity=0.2]
+(axis cs:3,9.54305551868268)
+--(axis cs:3,14.2861810183525)
+--(axis cs:9,16.4590607643127)
+--(axis cs:9,13.6525455887533)
+--(axis cs:9,13.6525455887533)
+--(axis cs:3,9.54305551868268)
+--cycle;
+
+\path [fill=color1, fill opacity=0.2]
+(axis cs:3,19.0293065180223)
+--(axis cs:3,14.2861810183525)
+--(axis cs:9,16.4590607643127)
+--(axis cs:9,19.2655759398722)
+--(axis cs:9,19.2655759398722)
+--(axis cs:3,19.0293065180223)
+--cycle;
+
+\path [fill=green!50.1960784313725!black, fill opacity=0.2]
+(axis cs:3,10.9229734988392)
+--(axis cs:3,15.9570677447319)
+--(axis cs:9,13.1708112287521)
+--(axis cs:9,10.2482255343582)
+--(axis cs:9,10.2482255343582)
+--(axis cs:3,10.9229734988392)
+--cycle;
+
+\path [fill=green!50.1960784313725!black, fill opacity=0.2]
+(axis cs:3,20.9911619906246)
+--(axis cs:3,15.9570677447319)
+--(axis cs:9,13.1708112287521)
+--(axis cs:9,16.0933969231461)
+--(axis cs:9,16.0933969231461)
+--(axis cs:3,20.9911619906246)
+--cycle;
+
+\path [fill=color2, fill opacity=0.2]
+(axis cs:3,10.9013402799313)
+--(axis cs:3,15.6877468585968)
+--(axis cs:9,12.8413290047646)
+--(axis cs:9,9.82914906647432)
+--(axis cs:9,9.82914906647432)
+--(axis cs:3,10.9013402799313)
+--cycle;
+
+\path [fill=color2, fill opacity=0.2]
+(axis cs:3,20.4741534372623)
+--(axis cs:3,15.6877468585968)
+--(axis cs:9,12.8413290047646)
+--(axis cs:9,15.8535089430548)
+--(axis cs:9,15.8535089430548)
+--(axis cs:3,20.4741534372623)
+--cycle;
+
+\addplot [semithick, blue, mark=*, mark size=3, mark options={solid}]
+table {%
+3 0.000986804962158203
+9 0.00105173349380493
+};
+\addplot [semithick, red, mark=x, mark size=3, mark options={solid}]
+table {%
+3 6.18239305019379
+9 6.22238455057144
+};
+\addplot [semithick, color0, mark=*, mark size=3, mark options={solid}]
+table {%
+3 3.05621681928635
+9 2.15978385448456
+};
+\addplot [semithick, color1, mark=*, mark size=3, mark options={solid}]
+table {%
+3 14.2861810183525
+9 16.4590607643127
+};
+\addplot [semithick, green!50.1960784313725!black, mark=*, mark size=3, mark options={solid}]
+table {%
+3 15.9570677447319
+9 13.1708112287521
+};
+\addplot [semithick, color2, mark=*, mark size=3, mark options={solid}]
+table {%
+3 15.6877468585968
+9 12.8413290047646
+};
+
+\nextgroupplot[
+tick align=outside,
+tick pos=left,
+x grid style={white!69.0196078431373!black},
+xmin=0, xmax=1,
+xtick style={color=black},
+y grid style={white!69.0196078431373!black},
+ymin=0, ymax=1,
+ytick style={color=black}
+]
+\end{groupplot}
+
+\end{tikzpicture}

@@ -49,7 +49,7 @@ class TreeSeparation(object):
         tree_generated.learning_red_nodes = set()
         tree_generated.learning_green_nodes = set()
         train_a, train_b = tree_generated.random_choose_training_samples(training_size, random.seed())
-        #draw_graph_labels(tree_generated.graph, [tree_generated.class_a, tree_generated.class_b, tree_generated.learning_red_nodes, tree_generated.learning_green_nodes], ["red", "green", "black", "blue"])
+        #draw_graph_labels(Tree.graph, [Tree.class_a, Tree.class_b, Tree.learning_red_nodes, Tree.learning_green_nodes], ["red", "green", "black", "blue"])
         #draw_graph_with_labels_training(tree)
 
         for classifier in self.classifiers:
@@ -74,7 +74,7 @@ class TreeSeparation(object):
                                                num_learning_green=train_b,
                                                num_learning_red=train_a, classification_method="red_green")
             # print(train_a, train_b, classifier, classification, len(classification))
-            self.dataset.experiment_to_database("ECML2020" + classifier, columns, column_types, [entries])
+            self.dataset.experiment_to_database("ECML2020" + classifier, columns, [entries], column_types)
 
     def run_tree_experiment(self):
         for i in range(self.number_of_examples):

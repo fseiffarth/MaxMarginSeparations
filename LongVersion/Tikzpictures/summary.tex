@@ -1,0 +1,16 @@
+\documentclass{article}
+\usepackage{tikz, pgfplots}
+\usepgfplotslibrary{groupplots}
+\usepackage[left=1cm, right=1cm, bottom=2cm]{geometry}
+\pgfplotsset{compat=newest}
+\usepackage{longtable}
+\begin{document}
+	\begin{longtable}{c}
+		\input{Accuracy}\\
+		\input{AccuracyW}\\
+		\input{CoverageW}\\
+		\input{Coverage}\\
+		\input{Runtime}
+	\end{longtable}
+
+\end{document}

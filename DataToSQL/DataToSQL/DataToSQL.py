@@ -23,7 +23,7 @@ class DataToSQL(object):
         self.db_name = db_name + ".sqlite"
         """Create db if it does not exist"""
         if not os.path.isfile(self.file_path + self.db_name):
-            sqlite3.connect(self.file_path + self.db_name + ".sqlite")
+            sqlite3.connect(self.file_path + self.db_name)
 
     """Check if table exists otherwise create"""
 
@@ -31,8 +31,10 @@ class DataToSQL(object):
         string = ""
         for i, entry in enumerate(column_list, 0):
             string += entry
-            if type_list and len(type_list) == len(column_list):
+            if type_list and len(type_list) > i:
                 string += " " + type_list[i]
+            else:
+                string += " " + "TEXT"
             string += ","
         string = string[:-1]
         self.set_with_query("CREATE TABLE if not exists " + table_name + " (" + string + ");")
@@ -186,8 +188,8 @@ class DataToSQL(object):
         plot_3d_data_colorbar(data, column_a_ticks, column_b_ticks, column_name_a_values, column_name_b_values, min_val,
                               max_val, heading, x_label_name, y_label_name, colormap, colorbar_label, tikz_save, name)
 
-    def experiment_to_database(self, experiment_name, experiment_attributes, experiment_attributes_type,
-                               experiment_values):
+    def experiment_to_database(self, experiment_name, experiment_attributes,
+                               experiment_values, experiment_attributes_type=[]):
         """
 
         :param experiment_name:

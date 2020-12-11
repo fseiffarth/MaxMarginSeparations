@@ -93,4 +93,4 @@ def node_prediction_graphs(node_number, edge_density, seed, training_size, plot=
 def run_single_experiment(dataset, columns, column_types, num_nodes, edge_density, seed, train_set_size,
                               plot=False):
     entries = node_prediction_graphs(num_nodes, edge_density, seed, train_set_size)
-    dataset.experiment_to_database("ECML2020", columns, column_types, [entries])
+    dataset.experiment_to_database("ECML2020", columns, [entries], column_types)

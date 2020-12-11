@@ -1,9 +1,9 @@
 from sklearn import svm
 from sklearn.datasets import make_blobs
 
-from Algos import ClassificationPointSet, set_training_testing, plot
+from Algos import plot
 import numpy as np
-from mathutils.geometry import intersect_line_plane
+
 
 class DataGenerator:
     @staticmethod
@@ -36,15 +36,16 @@ class DataGenerator:
         plane_point = np.zeros(len(w[0]))
         plane_point[i] = -b / w[0][i]
 
-        sign = np.sign(np.dot(plane_point-point, w[0]))
+        sign = np.sign(np.dot(plane_point - point, w[0]))
 
-        distance = np.abs(np.dot(point, w[0]) + b)/np.dot(w[0], w[0])
-        return point + sign*2*distance*w[0]
+        distance = np.abs(np.dot(point, w[0]) + b) / np.dot(w[0], w[0])
+        return point + sign * 2 * distance * w[0]
+
 
 def main():
     X, y = DataGenerator.generate_blobs(1000, [[0, 0], [4, 0]], separable=True)
 
-    colorlist = np.where(y==0, "orange", "violet")
+    colorlist = np.where(y == 0, "orange", "violet")
     clf = svm.SVC(kernel='linear', C=1000)
     clf.fit(X, y)
     plot(X, colorlist, dim=2, model=clf)

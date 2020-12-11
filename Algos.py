@@ -13,6 +13,8 @@ from scipy.optimize import linprog
 from scipy.spatial.qhull import ConvexHull
 import matplotlib.pyplot as plt
 import seaborn as sb
+from scipy.optimize import linprog
+from scipy.spatial import Delaunay
 
 
 def dist(x, y):
@@ -20,10 +22,8 @@ def dist(x, y):
 
 
 def intersect(hull_points_A, hull_points_B):
-    for i in hull_points_A:
-        if i in hull_points_B:
-            return True
-    return False
+    result = len(set(hull_points_A).intersection(hull_points_B))
+    return result != 0
 
 
 def in_hull(points, x):
@@ -62,45 +62,31 @@ def get_inside_points(Points, X, Outside, add_point="", CheckSet=""):
     return inside_points, added_points, False
 
 
-def get_points_inside_convex_hull(E, convex_hull, inside_p, outside_points, added_point=""):
-    inside_points = inside_p.copy()
+def get_points_inside_convex_hull_linprog(E, inside_p, outside_points, next_point=None):
     added_points = []
+    n_points = len(inside_p)
+    c = np.zeros(n_points)
+    A = np.r_[E[inside_p].T, np.ones((1, n_points))]
+    for x in outside_points:
+        if x is not None and x != next_point:
+            b = np.r_[E[x], np.ones(1)]
+            lp = linprog(c, A_eq=A, b_eq=b)
+            if lp.success:
+                added_points.append(x)
+    if next_point is not None:
+        return list(inside_p) + added_points, added_points + [next_point]
+    return list(inside_p) + added_points, added_points
 
-    start = time.time()
-    """
-    for i in outside_points:
-        point = E[i]
-        inside = True
-        for face in convex_hull.equations:
-            c = np.dot(point, face[:-1]) + face[-1]  # point[0]*face[0] + point[1]*face[1] + face[2]
-            # print(i, point, c)
-            if 1e-14 > c > 0:  # 0.0000000000000005
-                c = 0
-            if c > 0:
-                inside = False
-                break
-        if inside == True:
-            inside_points.append(i)
-            added_points.append(i)
 
-    if added_point != "":
-        inside_points.append(added_point)
-        added_points.append(added_point)
-
-    #print("Slow", time.time() - start)
-    
-    start = time.time()
-    """
+def get_points_inside_convex_hull(E, convex_hull, inside_p, outside_points):
     outside = E[outside_points]
-    outside_array = (
-                np.matmul(outside, convex_hull.equations.transpose()[:-1]) + convex_hull.equations.transpose()[-1]).max(
-        axis=1)
-    t = np.argwhere(outside_array < 1e-14)
-    t = t.reshape((len(t))).astype(int)
-    added_points = list(np.array(outside_points)[t])
-    #print("Fast", time.time() - start)
+    #print(np.shape(convex_hull.equations))
+    outside_array = (np.matmul(outside, convex_hull.equations.transpose()[:-1]) + convex_hull.equations.transpose()[-1]).max(axis=1)
+    t = np.argwhere(outside_array < 1e-14).reshape(-1).astype(int)
 
-    return inside_points, added_points
+    added_points = list(np.array(outside_points)[t])
+
+    return list(inside_p) + added_points, added_points
 
 
 def random_point_set(number, dimension, start_points1_number, start_points2_number, field_size=1):
@@ -275,7 +261,7 @@ def plot(data, color_list, dim=3, name="Test", model="", save=False):
     # tikz_save("/home/florian/Dokumente/Forschung/EigeneForschung/SpringerLatex/" + "PlotOneClass" + ".tex", wrap = False)
 
 
-def plot_prediction(openMLData, prediction, color_list, dim=3, name="Test", model="", save=False, algo=""):
+def plot_prediction(openMLData, prediction, dim=3, name="Test", model="", save=False, algo=""):
     if dim == 3:
         X_coord = []
         Y_coord = []
@@ -288,14 +274,9 @@ def plot_prediction(openMLData, prediction, color_list, dim=3, name="Test", mode
             Y_coord.append(openMLData.data_X[i][1])
             Z_coord.append(openMLData.data_X[i][2])
 
-        ax.scatter3D(X_coord, Y_coord, Z_coord, c=color_list)
+        ax.scatter3D(X_coord, Y_coord, Z_coord, c="b")
     else:
         ax = plt.axes()
-
-        x_val_dict = {}
-        y_val_dict = {}
-
-        color = ""
         for i, x in enumerate(openMLData.data_X):
             if prediction[i] == -1:
                 color = "blue"
@@ -307,15 +288,20 @@ def plot_prediction(openMLData, prediction, color_list, dim=3, name="Test", mode
             circle = plt.Circle((x[0], x[1]), 0.05, color=color, fill=False)
             ax.add_artist(circle)
 
-        for i, x in enumerate(color_list, 0):
-            if x not in x_val_dict:
-                x_val_dict[x] = [openMLData.data_X[i][0]]
-                y_val_dict[x] = [openMLData.data_X[i][1]]
-            else:
-                x_val_dict[x].append(openMLData.data_X[i][0])
-                y_val_dict[x].append(openMLData.data_X[i][1])
-        for key, value in x_val_dict.items():
-            plt.scatter(value, y_val_dict[key], c=key)
+        for i in range(openMLData.class_number):
+            indices = np.where(openMLData.data_y == i)[0]
+            prediction_indices = np.where(prediction == i)[0]
+            points = openMLData.data_X[prediction_indices]
+            hull = ConvexHull(points)
+            plt.scatter(openMLData.data_X[prediction_indices[hull.vertices], 0],
+                        openMLData.data_X[prediction_indices[hull.vertices], 1],
+                        c="red")
+            plt.plot(openMLData.data_X[prediction_indices[hull.vertices], 0],
+                     openMLData.data_X[prediction_indices[hull.vertices], 1], 'r--',
+                     lw=2)
+            cmap = matplotlib.cm.get_cmap('viridis')
+            plt.scatter(openMLData.data_X[indices, 0], openMLData.data_X[indices, 1],
+                        c=[cmap(float(i) / (openMLData.class_number - 1)) for _ in range(len(indices))])
 
         if model:
             xlim = ax.get_xlim()
@@ -683,7 +669,7 @@ def generate_heatmap(openMLData, prediction, algo=''):
         else:
             prediction_dist[x] = 1
     for i in range(openMLData.data_size):
-        data[int(prediction[i])][openMLData.data_y[i]] += 1. / prediction_dist[openMLData.data_y[i]]
+        data[int(prediction[i])][openMLData.data_y[i]] += 1. / openMLData.label_distribution[openMLData.data_y[i]]
     sb.heatmap(data, cmap="Blues")
     plt.title(algo)
     plt.show()

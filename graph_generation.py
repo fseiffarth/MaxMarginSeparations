@@ -130,6 +130,36 @@ class graph_generation(object):
 
             return red_nodes_set, green_nodes_set
 
+        # Label a graph with number of classes different labels
+        def label_graph(classes, max_biggest_class_size=0.75):
+            start_nodes = random.sample([x for x in range(0, self.Graph.number_of_nodes())], classes)
+            biggest_class = 1
+            while biggest_class > max_biggest_class_size:
+                fixed_labels = np.empty(self.Graph.number_of_nodes(), dtype=np.int8)
+                fixed_labels.fill(-1)
+                current_labels = np.empty(self.Graph.number_of_nodes(), dtype=np.int8)
+                current_labels.fill(-1)
+                current_nodes = start_nodes.copy()
+
+                for i, node in enumerate(start_nodes):
+                    fixed_labels[node] = i
+
+                while len(current_nodes) > 0:
+                    nodes_step = current_nodes.copy()
+                    current_nodes.clear()
+                    for node in nodes_step:
+                        for neighbor in nx.all_neighbors(graph, node):
+                            if fixed_labels[neighbor] == -1:
+                                if current_labels == -1:
+                                    current_labels[neighbor] = current_labels[node]
+                                else:
+                                    rand_num = random.randint(0, 1)
+                                    if rand_num:
+                                        current_labels[neighbor] = current_labels[node]
+                                current_nodes.append(neighbor)
+                    fixed_labels[np.where(current_labels != -1)[0]] = current_labels[np.where(current_labels != -1)[0]]
+            return fixed_labels
+
         """randomly set E to red and green and do spreading across the neighbours"""
 
         def double_random_spread(self, input=[], seed=0):
@@ -193,7 +223,7 @@ class graph_generation(object):
 
         def random_tree_coloring(self, input=[], seed=0, print_steps=False):
             T = self.random_spanning_forest(seed=seed)
-            T_Graph = Graph_Generation(random_coloring=False, random_generate=False, Graph=T)
+            T_Graph = graph_generation(random_coloring=False, random_generate=False, Graph=T)
             # T_Graph.draw_graph()
             random.seed(seed)
 
@@ -321,7 +351,7 @@ class graph_generation(object):
         def random_tree_partition_coloring(self, input=[{0}, {1}], seed=0, print_steps=False):
             training_elements = input[0].union(input[1])
             T = self.random_spanning_forest()
-            T_Graph = Graph_Generation(random_coloring=False, Graph=T)
+            T_Graph = graph_generation(random_coloring=False, Graph=T)
 
             red_nodes = input[1]
             green_nodes = input[0]
@@ -554,7 +584,8 @@ class graph_generation(object):
                                   "random_grow_coloring": random_grow_coloring, "closure_init_coloring": closure_init,
                                   "tree_halfspace": tree_halfspace,
                                   "random_tree_coloring": random_tree_coloring,
-                                  "random_tree_partition_coloring": random_tree_partition_coloring}
+                                  "random_tree_partition_coloring": random_tree_partition_coloring,
+                                  "label_graph": label_graph}
         # set graph
         self.Graph = graph
 
@@ -987,7 +1018,7 @@ class graph_generation(object):
         for i in range(number_of_trees):
             # print("{0}/{1}".format(i, number_of_trees))
             T = self.random_spanning_forest()
-            T_Graph = Graph_Generation(random_generate=False, Graph=T)
+            T_Graph = graph_generation(random_generate=False, Graph=T)
             if T_Graph.greedy_classifier_algorithm2(self.learning_red_nodes, self.learning_green_nodes,
                                                     restricted):
                 number_of_valid_trees += 1
@@ -1265,7 +1296,7 @@ class graph_generation(object):
                 # print("{0}/{1}".format(t, number_of_steps))
                 random.seed()
                 T = self.random_spanning_forest()
-                T_Graph = Graph_Generation(red_nodes=self.red_nodes, green_nodes=self.green_nodes, Graph=T)
+                T_Graph = graph_generation(red_nodes=self.red_nodes, green_nodes=self.green_nodes, Graph=T)
                 # TreeL = Graph_Generation(red_nodes= self.learning_red_nodes, green_nodes=self.learning_green_nodes, graph = T)
                 T_Graph.set_classified_node_class(self.learning_green_nodes, "green")
                 T_Graph.set_classified_node_class(self.learning_red_nodes, "red")

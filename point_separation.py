@@ -109,8 +109,7 @@ class PointSeparation(object):
                         table_name = "ECML2020" + classifier + str(self.dataset)
 
                     if separable or (classifier == "svm" and len(self.classifiers) == 1):
-                        self.database.experiment_to_database(
-                            table_name, columns,
-                            column_types,
-                            get_data_values(E, y, classification, A_elements, B_elements))
+                        self.database.experiment_to_database(table_name, columns,
+                                                             get_data_values(E, y, classification, A_elements,
+                                                                             B_elements), column_types)
 

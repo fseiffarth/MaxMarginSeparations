@@ -1,0 +1,9 @@
+db_name: "MCSSQueryStrategies"
+table_name: "Small graphs"
+output_path: "results/"
+closure_operators: ["sp", "sp2", "sp3", "sp4", "sp5", "sp10"]
+query_strategies: ["greedy", "greedy_random", "nn", "farthest"]
+number_of_repetitions: 100
+graph_sizes: [100, 200, 300, 400, 500]
+graph_densities: [1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2]
+class_start_sizes: [[1,1]]

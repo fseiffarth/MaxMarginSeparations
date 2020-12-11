@@ -3,6 +3,7 @@ import time
 import numpy as np
 import networkx as nx
 from DataToSQL import *
+from DataToSQL.DataToSQL.DataToSQL import DataToSQL
 
 
 class MaximumMarginSeparation:
